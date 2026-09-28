@@ -2,8 +2,10 @@ package com.seiftech.hifadhio.ui;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
@@ -27,6 +29,25 @@ public class MainActivity extends AppCompatActivity {
 
         bottomNav = findViewById(R.id.bottom_nav);
         fabAdd = findViewById(R.id.fab_add);
+
+        // Dynamically adjust container and FAB margin based on measured BottomNav height + insets
+        bottomNav.post(() -> {
+            int navHeight = bottomNav.getHeight();
+            if (navHeight > 0) {
+                View container = findViewById(R.id.fragment_container);
+                if (container != null && container.getLayoutParams() instanceof CoordinatorLayout.LayoutParams) {
+                    CoordinatorLayout.LayoutParams lp = (CoordinatorLayout.LayoutParams) container.getLayoutParams();
+                    lp.bottomMargin = navHeight;
+                    container.setLayoutParams(lp);
+                }
+                if (fabAdd != null && fabAdd.getLayoutParams() instanceof CoordinatorLayout.LayoutParams) {
+                    CoordinatorLayout.LayoutParams fabLp = (CoordinatorLayout.LayoutParams) fabAdd.getLayoutParams();
+                    int extra = (int) (16 * getResources().getDisplayMetrics().density);
+                    fabLp.bottomMargin = navHeight + extra;
+                    fabAdd.setLayoutParams(fabLp);
+                }
+            }
+        });
 
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()

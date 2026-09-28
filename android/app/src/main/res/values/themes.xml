@@ -41,4 +41,35 @@
         <item name="cornerSizeBottomLeft">0dp</item>
         <item name="cornerSizeBottomRight">0dp</item>
     </style>
+
+    <!-- BottomNavigationView Styling for Perfect Icon-Text Hierarchy -->
+    <style name="Widget.Hifadhio.BottomNavigationView" parent="Widget.Material3.BottomNavigationView">
+        <item name="itemIconSize">22dp</item>
+        <item name="itemActiveIndicatorStyle">@style/Widget.Hifadhio.BottomNavigationView.ActiveIndicator</item>
+        <item name="itemIconTint">@color/nav_item_icon_tint</item>
+        <item name="itemTextColor">@color/nav_item_text_color</item>
+        <item name="itemTextAppearanceActive">@style/TextAppearance.Hifadhio.BottomNav.Active</item>
+        <item name="itemTextAppearanceInactive">@style/TextAppearance.Hifadhio.BottomNav.Inactive</item>
+        <item name="labelVisibilityMode">labeled</item>
+        <item name="itemPaddingTop">10dp</item>
+        <item name="itemPaddingBottom">10dp</item>
+        <item name="android:background">@color/surface</item>
+        <item name="elevation">8dp</item>
+    </style>
+
+    <style name="Widget.Hifadhio.BottomNavigationView.ActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@color/mint_soft</item>
+        <item name="android:width">44dp</item>
+        <item name="android:height">28dp</item>
+    </style>
+
+    <style name="TextAppearance.Hifadhio.BottomNav.Active" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:textSize">11sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.Hifadhio.BottomNav.Inactive" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:textSize">11sp</item>
+        <item name="android:textStyle">normal</item>
+    </style>
 </resources>
