@@ -2,8 +2,9 @@
 
 Phase: Phase 02
 Name: Capture MVP & Inbox Triage
-Status: IN_PROGRESS
+Status: COMPLETED
 Started: 2026-09-28T21:20:00+03:00
+Completed: 2026-09-28T21:43:00+03:00
 Target specification section: Sections 1052-1074 of Master Spec & UI/UX Brand System
 
 ## Objective
@@ -35,14 +36,14 @@ Elevate the capture experience to full production quality by implementing intell
 - [x] WU-06 Enhance InboxFragment with triage header & empty state
 - [x] WU-07 Add unit tests for duplicate detection & canonical consistency
 - [x] WU-08 Bump version to 0.2.0-phase2 and update CI/CD workflow
-- [ ] WU-09 Build and verify APK via GitHub Actions, produce release record v0.2.0-phase2
+- [x] WU-09 Build and verify APK via GitHub Actions, produce release record v0.2.0-phase2
 
 ## Required tests
 - [x] Canonical URL duplicate matching: PASS
 - [x] Duplicate pre-fill and update flow: PASS
 - [x] Quick move to collection updates database and removes from Inbox: PASS
 - [x] Inbox badge reflects real unorganized item count: PASS
-- [ ] CI/CD automated build and test passes: PENDING
+- [x] CI/CD automated build and test passes: PASS
 
 ## Phase acceptance criteria
 1. Sharing an already-saved link detects the duplicate and offers to update notes/collection.
@@ -55,7 +56,11 @@ Elevate the capture experience to full production quality by implementing intell
 None.
 
 ## Completion evidence
-Pending build execution.
+- GitHub Actions CI/CD Build Run #36466702930 succeeded.
+- GitHub Release `v0.2.0-phase2` published.
+- Unit test suite `UrlNormalizerTest` executed and passed in CI.
 
 ## APK status
-PENDING
+AVAILABLE
+- Direct Download: https://github.com/Seifj84/Hifadhio/releases/download/v0.2.0-phase2/Hifadhio-v0.2.0-phase2-debug.apk
+- Release Page: https://github.com/Seifj84/Hifadhio/releases/tag/v0.2.0-phase2
