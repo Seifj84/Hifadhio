@@ -1,9 +1,9 @@
 # Next Action
 
-1. Build native Android codebase under `android/`:
-   - Data models: `ContentItem`, `ContentDb`, `UrlNormalizer`, `PlatformDetector`.
-   - UI components: `MainActivity`, `HomeFragment`, `InboxFragment`, `LibraryFragment`, `AskFragment`, `ProfileFragment`, `ContentAdapter`, `SaveLinkBottomSheet`, `ItemDetailBottomSheet`.
-   - Layouts, vector drawables, Material 3 theme and color resources matching Hifadhio brand tokens.
-2. Generate launcher mipmap icons from `docs/brand_assets/hifadhio_app_icon_1024.png`.
-3. Set up Gradle build and GitHub Actions CI workflow to compile the APK.
-4. Verify tests, commit, push to `origin main`, trigger build, and collect the compiled APK.
+1. Install `Hifadhio-v0.1.0-phase1-debug.apk` on a physical Android device or emulator.
+2. Complete acceptance checklist in `release_records/phase_01_capture_mvp/v0.1.0/APK_VERIFICATION.md`:
+   - Verify native Share from Instagram, TikTok, YouTube, and browser.
+   - Verify URL normalization and parameter stripping.
+   - Verify local persistence across restarts.
+   - Verify live search and collection filtering.
+3. Review feedback and proceed to Phase 02 planning.
