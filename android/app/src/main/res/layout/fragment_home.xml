@@ -9,7 +9,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="VERTICAL"
+        android:orientation="vertical"
         android:padding="16dp">
 
         <!-- Search Bar -->
@@ -18,7 +18,7 @@
             android:layout_height="52dp"
             android:background="@drawable/bg_search_input"
             android:gravity="center_vertical"
-            android:orientation="HORIZONTAL"
+            android:orientation="horizontal"
             android:paddingStart="14dp"
             android:paddingEnd="14dp">
 
@@ -63,14 +63,14 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="HORIZONTAL"
+                android:orientation="horizontal"
                 android:padding="18dp">
 
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:orientation="VERTICAL">
+                    android:orientation="vertical">
 
                     <TextView
                         android:id="@+id/tv_total_saved"
@@ -100,7 +100,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:orientation="VERTICAL">
+                    android:orientation="vertical">
 
                     <TextView
                         android:id="@+id/tv_total_collections"
@@ -220,7 +220,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"
             android:gravity="center"
-            android:orientation="VERTICAL"
+            android:orientation="vertical"
             android:padding="24dp"
             android:visibility="gone">
 
