@@ -1,0 +1,60 @@
+{
+  "product": "Hifadhio",
+  "version": "1.0",
+  "tagline": "Save once. Find it when it matters.",
+  "brand_architecture": {
+    "product": "Hifadhio",
+    "business_brand": "NAS Digital Solutions",
+    "technology_brand": "SeifTech",
+    "about_line": "A NAS Digital Solutions product - engineered by SeifTech."
+  },
+  "colors": {
+    "primary_navy": "#0B1020",
+    "surface_navy": "#121A2F",
+    "mint": "#32D5A4",
+    "mint_soft": "#DDF9F0",
+    "purple": "#7257E8",
+    "blue": "#3B82F6",
+    "amber": "#F4B740",
+    "danger": "#EF5B5B",
+    "success": "#20B486",
+    "background": "#F6F8FB",
+    "surface": "#FFFFFF",
+    "text": "#111827",
+    "muted_text": "#667085",
+    "divider": "#E4E7EC"
+  },
+  "radius": {
+    "xs": 8,
+    "sm": 12,
+    "md": 16,
+    "lg": 24,
+    "xl": 32,
+    "pill": 999
+  },
+  "spacing": [
+    4,
+    8,
+    12,
+    16,
+    20,
+    24,
+    32,
+    40,
+    48
+  ],
+  "typography": {
+    "ui_family": "Inter or system sans-serif fallback",
+    "display": "700",
+    "heading": "700",
+    "body": "400/500",
+    "caption": "500"
+  },
+  "navigation": [
+    "Home",
+    "Inbox",
+    "Library",
+    "Ask",
+    "Profile"
+  ]
+}

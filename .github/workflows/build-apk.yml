@@ -1,0 +1,79 @@
+name: Build Hifadhio Phase 1 APK
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Test APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x android/gradlew
+
+      - name: Run Unit Tests
+        run: |
+          cd android
+          ./gradlew testDebugUnitTest --no-daemon
+
+      - name: Build Debug APK
+        run: |
+          cd android
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Prepare Release Artifacts
+        run: |
+          mkdir -p release_records/phase_01_capture_mvp/v0.1.0/
+          cp android/app/build/outputs/apk/debug/app-debug.apk release_records/phase_01_capture_mvp/v0.1.0/Hifadhio-v0.1.0-phase1-debug.apk
+          sha256sum release_records/phase_01_capture_mvp/v0.1.0/Hifadhio-v0.1.0-phase1-debug.apk > release_records/phase_01_capture_mvp/v0.1.0/SHA256SUMS.txt
+          cat release_records/phase_01_capture_mvp/v0.1.0/SHA256SUMS.txt
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hifadhio-v0.1.0-phase1-debug
+          path: release_records/phase_01_capture_mvp/v0.1.0/Hifadhio-v0.1.0-phase1-debug.apk
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.1.0-phase1
+          name: "Hifadhio v0.1.0 (Phase 1 Capture MVP)"
+          body: |
+            ## Hifadhio v0.1.0 — Phase 1 Capture MVP
+
+            > **Save once. Find it when it matters.**
+            > A NAS Digital Solutions product - engineered by SeifTech.
+
+            ### What's Included:
+            - **Android Native Share Target**: Direct capture via `ACTION_SEND` intent (`text/plain`) from Instagram, TikTok, YouTube, Facebook, X, web browsers.
+            - **Instant URL Normalization**: Automatically extracts clean URLs and strips tracking parameters (`igshid`, `fbclid`, `si`, `utm_*`).
+            - **Smart Platform Detection**: Identifies Instagram, TikTok, YouTube, Facebook, X, Reddit, Web with branded badges and colors.
+            - **Local-First SQLite Storage**: Fast offline persistence for URLs, titles, snippets, notes ("Why I saved this"), collections, and favorites.
+            - **Live Search & Filter**: Real-time filtering with platform chips and full-text search.
+            - **Material 3 UI**: 5-tab Bottom Navigation (Home, Inbox, Library, Ask, Profile).
+          files: release_records/phase_01_capture_mvp/v0.1.0/Hifadhio-v0.1.0-phase1-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

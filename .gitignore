@@ -1,0 +1,44 @@
+# Built application files
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Gradle files
+.gradle/
+build/
+*/build/
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Proguard / R8
+proguard/
+
+# Android Studio / IntelliJ IDEA
+*.iml
+.idea/
+.idea/caches
+.idea/libraries
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+
+# Keystore files
+*.jks
+*.keystore
+
+# Google Services
+google-services.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary / Scratch
+scratch/
+Hifadhio_Phase1_Source.zip
+Hifadhio_Design_Documentation_Bundle_v1.0.zip
+design_bundle/
+Hifadhio_Phase1/

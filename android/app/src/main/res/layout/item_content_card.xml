@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/surface">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="VERTICAL"
+        android:padding="16dp">
+
+        <!-- Top Row: Platform pill badge, Collection pill, Date, More button -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="HORIZONTAL">
+
+            <TextView
+                android:id="@+id/tv_card_platform"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_pill_badge"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="Instagram"
+                android:textColor="@color/platform_instagram"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_card_collection"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Inbox"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/tv_card_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:text="Today"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp" />
+
+            <ImageView
+                android:id="@+id/btn_card_more"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_more"
+                app:tint="@color/text_secondary" />
+        </LinearLayout>
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/tv_card_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:text="Content Item Title"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <!-- Canonical URL -->
+        <TextView
+            android:id="@+id/tv_card_url"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:ellipsize="end"
+            android:singleLine="true"
+            android:text="https://instagram.com/reel/..."
+            android:textColor="@color/blue"
+            android:textSize="12sp" />
+
+        <!-- Caption Snippet -->
+        <TextView
+            android:id="@+id/tv_card_caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:text="Snippet or description excerpt goes here..."
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp" />
+
+        <!-- User Note -->
+        <LinearLayout
+            android:id="@+id/layout_card_notes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_rounded_card"
+            android:padding="8dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tv_card_notes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Note: My thoughts..."
+                android:textColor="@color/text_primary"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="10dp"
+            android:background="@color/divider" />
+
+        <!-- Bottom Actions Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="HORIZONTAL">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_card_open"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Open Link"
+                android:textColor="@color/primary_navy"
+                app:icon="@drawable/ic_open"
+                app:iconTint="@color/primary_navy" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_card_share"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Share"
+                android:textColor="@color/text_secondary"
+                app:icon="@drawable/ic_share"
+                app:iconTint="@color/text_secondary" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <ImageView
+                android:id="@+id/btn_card_fav"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_star_outline"
+                app:tint="@color/amber" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>
