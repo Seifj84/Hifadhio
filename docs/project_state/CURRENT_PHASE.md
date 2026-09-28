@@ -52,15 +52,16 @@ Deliver a rock-solid, production-grade Android capture MVP that enables seamless
 3. Items persist across app restarts: VERIFIED
 4. Live search filters items instantly: VERIFIED
 5. All 5 navigation tabs render appropriate screens without error: VERIFIED
-6. Installable test APK compiled and verified: VERIFIED (SHA256: `79048c1ea999908cf2ae6a7dcfd6c7030e462d7c5bc112db5362ffb5fe4a39d4`)
+6. Installable test APK compiled and verified: VERIFIED (SHA256: `2f7d24af0fb58d2f7af8c41db8dcc40f5dcc810f582488f44f628aea9cd1e0ac`)
 
 ## Blockers
 None.
 
 ## Completion evidence
 - GitHub Repository: https://github.com/Seifj84/Hifadhio
-- GitHub Actions Run: https://github.com/Seifj84/Hifadhio/actions/runs/18074900760
-- Debug APK: `release_records/phase_01_capture_mvp/v0.1.0/Hifadhio-v0.1.0-phase1-debug.apk`
+- GitHub Actions Run: https://github.com/Seifj84/Hifadhio/actions/runs/36451036850
+- GitHub Release: https://github.com/Seifj84/Hifadhio/releases/tag/v0.1.0-phase1
+- Local Release Package: `Hifadhio-v0.1.0-phase1-debug.zip`
 
 ## APK status
 BUILT

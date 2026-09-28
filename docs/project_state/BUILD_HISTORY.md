@@ -2,4 +2,5 @@
 
 | Date | Phase | Version | Target | Result | Size | SHA256 | Notes |
 |------|-------|---------|--------|--------|------|--------|-------|
-| 2026-09-28 | Phase 01 | 0.1.0-phase1 | APK Debug | SUCCESS | 3.6 MB (3,777,085 bytes) | `79048c1ea999908cf2ae6a7dcfd6c7030e462d7c5bc112db5362ffb5fe4a39d4` | GitHub Actions Build #18074900760. Validated DEX, resources, and manifest. |
+| 2026-09-28 | Phase 01 | 0.1.0-phase1 | APK Debug | SUCCESS | 6.2 MB (6,231,550 bytes) | `2f7d24af0fb58d2f7af8c41db8dcc40f5dcc810f582488f44f628aea9cd1e0ac` | GitHub Actions Build #36451036850. Validated DEX, resources, manifest, unit tests passing. Published to GitHub Release v0.1.0-phase1. |
+

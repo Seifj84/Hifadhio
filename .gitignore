@@ -38,7 +38,6 @@ Thumbs.db
 
 # Temporary / Scratch
 scratch/
-Hifadhio_Phase1_Source.zip
-Hifadhio_Design_Documentation_Bundle_v1.0.zip
+*.zip
 design_bundle/
 Hifadhio_Phase1/
