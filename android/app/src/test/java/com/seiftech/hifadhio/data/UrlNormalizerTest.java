@@ -26,6 +26,37 @@ public class UrlNormalizerTest {
     }
 
     @Test
+    public void testCanonicalUrlDuplicateDetectionMatching() {
+        // Link with tracking parameters and www prefix vs clean link
+        String link1 = "https://www.instagram.com/reel/DCb1234/?igshid=abc123xyz&utm_source=ig_web_copy_link";
+        String link2 = "https://instagram.com/reel/DCb1234/";
+        String link3 = "https://instagram.com/reel/DCb1234";
+
+        assertEquals(UrlNormalizer.normalize(link1), UrlNormalizer.normalize(link2));
+        assertEquals(UrlNormalizer.normalize(link2), UrlNormalizer.normalize(link3));
+
+        // YouTube variant matching
+        String ytShare = "https://youtu.be/dQw4w9WgXcQ?si=tracker123&utm_medium=share";
+        String ytClean = "https://youtu.be/dQw4w9WgXcQ";
+        assertEquals(UrlNormalizer.normalize(ytShare), UrlNormalizer.normalize(ytClean));
+
+        // Query param order determinism
+        String queryA = "https://example.com/article?b=2&a=1";
+        String queryB = "https://example.com/article?a=1&b=2";
+        assertEquals(UrlNormalizer.normalize(queryA), UrlNormalizer.normalize(queryB));
+    }
+
+    @Test
+    public void testIsValidUrl() {
+        assertTrue(UrlNormalizer.isValidUrl("https://example.com"));
+        assertTrue(UrlNormalizer.isValidUrl("http://example.com/path"));
+        assertFalse(UrlNormalizer.isValidUrl("not-a-url"));
+        assertFalse(UrlNormalizer.isValidUrl("ftp://fileserver"));
+        assertFalse(UrlNormalizer.isValidUrl(""));
+        assertFalse(UrlNormalizer.isValidUrl(null));
+    }
+
+    @Test
     public void testPlatformDetection() {
         assertEquals("Instagram", PlatformDetector.detect("https://www.instagram.com/p/C123"));
         assertEquals("TikTok", PlatformDetector.detect("https://www.tiktok.com/@creator/video/12345"));

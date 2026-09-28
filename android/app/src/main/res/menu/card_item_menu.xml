@@ -9,6 +9,10 @@
         android:icon="@drawable/ic_share"
         android:title="Share Link" />
     <item
+        android:id="@+id/action_move"
+        android:icon="@drawable/ic_library"
+        android:title="Move to Collection" />
+    <item
         android:id="@+id/action_edit"
         android:icon="@drawable/ic_edit"
         android:title="Edit Details" />

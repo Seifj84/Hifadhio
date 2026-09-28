@@ -61,6 +61,57 @@
             android:textSize="12sp"
             android:textStyle="bold" />
 
+        <!-- Duplicate Detection Banner -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_duplicate_warning"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:visibility="gone"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/mint_soft">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_star"
+                        app:tint="@color/primary_navy" />
+
+                    <TextView
+                        android:id="@+id/tv_duplicate_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="Already saved in your library!"
+                        android:textColor="@color/primary_navy"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_duplicate_details"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Saved in Inbox. You can update your notes or collection below."
+                    android:textColor="@color/primary_navy"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
         <!-- Title Input -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/til_title"

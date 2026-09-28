@@ -20,6 +20,7 @@ public class InboxFragment extends Fragment implements ContentAdapter.OnItemActi
     private ContentDb db;
     private ContentAdapter adapter;
     private View layoutEmpty;
+    private android.widget.TextView tvInboxCountBadge;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -37,6 +38,7 @@ public class InboxFragment extends Fragment implements ContentAdapter.OnItemActi
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         layoutEmpty = view.findViewById(R.id.layout_inbox_empty);
+        tvInboxCountBadge = view.findViewById(R.id.tv_inbox_count_badge);
         RecyclerView recycler = view.findViewById(R.id.recycler_inbox);
 
         adapter = new ContentAdapter(requireContext(), db, this);
@@ -50,8 +52,20 @@ public class InboxFragment extends Fragment implements ContentAdapter.OnItemActi
         if (db == null || adapter == null) return;
         List<ContentItem> items = db.getInboxItems();
         adapter.setItems(items);
+        int count = items.size();
+        if (tvInboxCountBadge != null) {
+            if (count > 0) {
+                tvInboxCountBadge.setVisibility(View.VISIBLE);
+                tvInboxCountBadge.setText(count == 1 ? "1 item to triage" : count + " items to triage");
+            } else {
+                tvInboxCountBadge.setVisibility(View.GONE);
+            }
+        }
         if (layoutEmpty != null) {
             layoutEmpty.setVisibility(items.isEmpty() ? View.VISIBLE : View.GONE);
+        }
+        if (getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).updateInboxBadge();
         }
     }
 

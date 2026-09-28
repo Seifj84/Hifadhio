@@ -13,6 +13,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
@@ -65,6 +66,7 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ViewHold
         h.tvPlatform.setTextColor(platformColor);
 
         h.tvCollection.setText(item.getCollectionName());
+        h.tvCollection.setOnClickListener(v -> showMoveDialog(item));
         CharSequence relativeTime = DateUtils.getRelativeTimeSpanString(
                 item.getSavedAt(),
                 System.currentTimeMillis(),
@@ -134,6 +136,9 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ViewHold
                 send.putExtra(Intent.EXTRA_TEXT, item.getUrl());
                 context.startActivity(Intent.createChooser(send, "Share Link"));
                 return true;
+            } else if (id == R.id.action_move) {
+                showMoveDialog(item);
+                return true;
             } else if (id == R.id.action_edit) {
                 if (listener != null) listener.onEdit(item);
                 return true;
@@ -144,6 +149,77 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ViewHold
             return false;
         });
         popup.show();
+    }
+
+    private void showMoveDialog(ContentItem item) {
+        List<String> rawCollections = db.getCollections();
+        List<String> collections = new ArrayList<>();
+        String[] presets = new String[]{"Inbox", "Articles", "Research", "Inspiration", "Work", "Personal"};
+        for (String p : presets) {
+            if (!collections.contains(p)) collections.add(p);
+        }
+        for (String c : rawCollections) {
+            if (c != null && !c.trim().isEmpty() && !collections.contains(c.trim())) {
+                collections.add(c.trim());
+            }
+        }
+
+        List<String> options = new ArrayList<>(collections);
+        options.add("+ New Collection...");
+
+        int currentSelection = collections.indexOf(item.getCollectionName());
+        if (currentSelection < 0) currentSelection = 0;
+
+        new AlertDialog.Builder(context)
+                .setTitle("Move to Collection")
+                .setSingleChoiceItems(options.toArray(new String[0]), currentSelection, (dialog, which) -> {
+                    dialog.dismiss();
+                    if (which == options.size() - 1) {
+                        showCreateCollectionDialog(item);
+                    } else {
+                        String target = options.get(which);
+                        db.moveToCollection(item.getId(), target);
+                        Toast.makeText(context, "Moved to " + target, Toast.LENGTH_SHORT).show();
+                        if (listener != null) listener.onDataChanged();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void showCreateCollectionDialog(ContentItem item) {
+        final android.widget.EditText input = new android.widget.EditText(context);
+        input.setHint("e.g. Design Systems");
+        input.setSingleLine(true);
+        input.setTextColor(ContextCompat.getColor(context, R.color.text_primary));
+        input.setHintTextColor(ContextCompat.getColor(context, R.color.text_secondary));
+
+        android.widget.FrameLayout container = new android.widget.FrameLayout(context);
+        android.widget.FrameLayout.LayoutParams params = new android.widget.FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        int margin = (int) (20 * context.getResources().getDisplayMetrics().density);
+        params.leftMargin = margin;
+        params.rightMargin = margin;
+        input.setLayoutParams(params);
+        container.addView(input);
+
+        new AlertDialog.Builder(context)
+                .setTitle("New Collection")
+                .setMessage("Enter collection name for this item:")
+                .setView(container)
+                .setPositiveButton("Move", (dialog, which) -> {
+                    String name = input.getText() != null ? input.getText().toString().trim() : "";
+                    if (!name.isEmpty()) {
+                        db.moveToCollection(item.getId(), name);
+                        Toast.makeText(context, "Moved to " + name, Toast.LENGTH_SHORT).show();
+                        if (listener != null) listener.onDataChanged();
+                    } else {
+                        Toast.makeText(context, "Collection name cannot be empty", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void openUrl(String url) {

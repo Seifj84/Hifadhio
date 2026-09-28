@@ -128,6 +128,9 @@ public class HomeFragment extends Fragment implements ContentAdapter.OnItemActio
                 .setPositiveButton("Delete", (dialog, which) -> {
                     db.delete(item.getId());
                     refresh();
+                    if (getActivity() instanceof MainActivity) {
+                        ((MainActivity) getActivity()).updateInboxBadge();
+                    }
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
@@ -136,5 +139,8 @@ public class HomeFragment extends Fragment implements ContentAdapter.OnItemActio
     @Override
     public void onDataChanged() {
         refresh();
+        if (getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).updateInboxBadge();
+        }
     }
 }

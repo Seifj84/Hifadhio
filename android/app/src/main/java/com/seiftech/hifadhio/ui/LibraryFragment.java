@@ -111,6 +111,9 @@ public class LibraryFragment extends Fragment implements ContentAdapter.OnItemAc
                     db.delete(item.getId());
                     setupChips();
                     refresh();
+                    if (getActivity() instanceof MainActivity) {
+                        ((MainActivity) getActivity()).updateInboxBadge();
+                    }
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
@@ -120,5 +123,8 @@ public class LibraryFragment extends Fragment implements ContentAdapter.OnItemAc
     public void onDataChanged() {
         setupChips();
         refresh();
+        if (getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).updateInboxBadge();
+        }
     }
 }

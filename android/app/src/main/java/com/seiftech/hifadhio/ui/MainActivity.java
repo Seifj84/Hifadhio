@@ -6,14 +6,19 @@ import android.view.View;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import com.google.android.material.badge.BadgeDrawable;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 import com.seiftech.hifadhio.R;
+import com.seiftech.hifadhio.data.ContentDb;
 import com.seiftech.hifadhio.data.UrlNormalizer;
 
 public class MainActivity extends AppCompatActivity {
 
+    private ContentDb db;
     private BottomNavigationView bottomNav;
     private ExtendedFloatingActionButton fabAdd;
     private final HomeFragment homeFragment = new HomeFragment();
@@ -27,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        db = new ContentDb(this);
         bottomNav = findViewById(R.id.bottom_nav);
         fabAdd = findViewById(R.id.fab_add);
 
@@ -79,6 +85,28 @@ public class MainActivity extends AppCompatActivity {
         fabAdd.setOnClickListener(v -> openSaveSheet(""));
 
         handleIncomingShareIntent(getIntent());
+        updateInboxBadge();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateInboxBadge();
+    }
+
+    public void updateInboxBadge() {
+        if (bottomNav == null || db == null) return;
+        int count = db.getInboxCount();
+        BadgeDrawable badge = bottomNav.getOrCreateBadge(R.id.nav_inbox);
+        if (count > 0) {
+            badge.setVisible(true);
+            badge.setNumber(count);
+            badge.setBackgroundColor(ContextCompat.getColor(this, R.color.mint));
+            badge.setBadgeTextColor(ContextCompat.getColor(this, R.color.primary_navy));
+        } else {
+            badge.setVisible(false);
+            badge.clearNumber();
+        }
     }
 
     @Override
@@ -105,6 +133,7 @@ public class MainActivity extends AppCompatActivity {
     private void openSaveSheet(String initialUrl) {
         SaveLinkBottomSheet sheet = SaveLinkBottomSheet.newInstance(initialUrl);
         sheet.setOnSavedListener(item -> {
+            updateInboxBadge();
             Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
             if (current instanceof HomeFragment) {
                 ((HomeFragment) current).refresh();
@@ -113,6 +142,21 @@ public class MainActivity extends AppCompatActivity {
             } else if (current instanceof LibraryFragment) {
                 ((LibraryFragment) current).refresh();
             }
+
+            String targetCollection = item.getCollectionName() != null ? item.getCollectionName() : "Inbox";
+            Snackbar snackbar = Snackbar.make(
+                    findViewById(R.id.coordinator_main),
+                    "Saved to " + targetCollection,
+                    Snackbar.LENGTH_LONG
+            );
+            if ("Inbox".equalsIgnoreCase(targetCollection)) {
+                snackbar.setAction("View in Inbox", v -> {
+                    bottomNav.setSelectedItemId(R.id.nav_inbox);
+                });
+                snackbar.setActionTextColor(ContextCompat.getColor(this, R.color.mint));
+            }
+            snackbar.setAnchorView(fabAdd);
+            snackbar.show();
         });
         sheet.show(getSupportFragmentManager(), "save_link_sheet");
     }

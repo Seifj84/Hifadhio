@@ -78,6 +78,36 @@ public class ContentDb extends SQLiteOpenHelper {
         return null;
     }
 
+    public ContentItem findByCanonicalUrl(String canonicalUrl) {
+        if (canonicalUrl == null || canonicalUrl.trim().isEmpty()) {
+            return null;
+        }
+        Cursor c = getReadableDatabase().query(TABLE_ITEMS, null, "canonical_url=?", new String[]{canonicalUrl.trim()}, null, null, null);
+        try {
+            if (c.moveToFirst()) {
+                return fromCursor(c);
+            }
+        } finally {
+            c.close();
+        }
+        return null;
+    }
+
+    public boolean existsByCanonicalUrl(String canonicalUrl) {
+        return findByCanonicalUrl(canonicalUrl) != null;
+    }
+
+    public int moveToCollection(long id, String newCollection) {
+        ContentValues cv = new ContentValues();
+        cv.put("collection_name", newCollection != null && !newCollection.trim().isEmpty() ? newCollection.trim() : "Inbox");
+        cv.put("updated_at", System.currentTimeMillis());
+        return getWritableDatabase().update(TABLE_ITEMS, cv, "id=?", new String[]{String.valueOf(id)});
+    }
+
+    public int getInboxCount() {
+        return getCountByCollection("Inbox");
+    }
+
     public List<ContentItem> getAll() {
         return search("", "All", "All");
     }
@@ -196,7 +226,7 @@ public class ContentDb extends SQLiteOpenHelper {
             }
             JSONObject root = new JSONObject();
             root.put("app", "Hifadhio");
-            root.put("version", "0.1.0-phase1");
+            root.put("version", "0.2.0-phase2");
             root.put("exported_at", System.currentTimeMillis());
             root.put("total_items", items.size());
             root.put("items", arr);

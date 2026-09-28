@@ -1,4 +1,4 @@
-name: Build Hifadhio Phase 1 APK
+name: Build Hifadhio Phase 2 APK
 
 on:
   push:
@@ -43,46 +43,46 @@ jobs:
 
       - name: Prepare Release Artifacts
         run: |
-          mkdir -p release_records/phase_01_capture_mvp/v0.1.0/
-          cp android/app/build/outputs/apk/debug/app-debug.apk release_records/phase_01_capture_mvp/v0.1.0/Hifadhio-v0.1.0-phase1-debug.apk
-          cd release_records/phase_01_capture_mvp/v0.1.0/
-          zip -9 Hifadhio-v0.1.0-phase1-debug.zip Hifadhio-v0.1.0-phase1-debug.apk
-          sha256sum Hifadhio-v0.1.0-phase1-debug.apk > SHA256SUMS.txt
-          sha256sum Hifadhio-v0.1.0-phase1-debug.zip >> SHA256SUMS.txt
+          mkdir -p release_records/phase_02_capture_triage/v0.2.0/
+          cp android/app/build/outputs/apk/debug/app-debug.apk release_records/phase_02_capture_triage/v0.2.0/Hifadhio-v0.2.0-phase2-debug.apk
+          cd release_records/phase_02_capture_triage/v0.2.0/
+          zip -9 Hifadhio-v0.2.0-phase2-debug.zip Hifadhio-v0.2.0-phase2-debug.apk
+          sha256sum Hifadhio-v0.2.0-phase2-debug.apk > SHA256SUMS.txt
+          sha256sum Hifadhio-v0.2.0-phase2-debug.zip >> SHA256SUMS.txt
           cat SHA256SUMS.txt
           cd ../../..
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Hifadhio-v0.1.0-phase1-debug
+          name: Hifadhio-v0.2.0-phase2-debug
           path: |
-            release_records/phase_01_capture_mvp/v0.1.0/Hifadhio-v0.1.0-phase1-debug.apk
-            release_records/phase_01_capture_mvp/v0.1.0/Hifadhio-v0.1.0-phase1-debug.zip
+            release_records/phase_02_capture_triage/v0.2.0/Hifadhio-v0.2.0-phase2-debug.apk
+            release_records/phase_02_capture_triage/v0.2.0/Hifadhio-v0.2.0-phase2-debug.zip
           if-no-files-found: error
 
       - name: Create GitHub Release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.1.0-phase1
-          name: "Hifadhio v0.1.0 (Phase 1 Capture MVP)"
+          tag_name: v0.2.0-phase2
+          name: "Hifadhio v0.2.0 (Phase 2 Capture MVP & Inbox Triage)"
           body: |
-            ## Hifadhio v0.1.0 — Phase 1 Capture MVP
+            ## Hifadhio v0.2.0 — Phase 2 Capture MVP & Inbox Triage
 
             > **Save once. Find it when it matters.**
             > A NAS Digital Solutions product - engineered by SeifTech.
 
-            ### What's Included:
-            - **Android Native Share Target**: Direct capture via `ACTION_SEND` intent (`text/plain`) from Instagram, TikTok, YouTube, Facebook, X, web browsers.
-            - **Instant URL Normalization**: Automatically extracts clean URLs and strips tracking parameters (`igshid`, `fbclid`, `si`, `utm_*`).
-            - **Smart Platform Detection**: Identifies Instagram, TikTok, YouTube, Facebook, X, Reddit, Web with branded badges and colors.
-            - **Local-First SQLite Storage**: Fast offline persistence for URLs, titles, snippets, notes ("Why I saved this"), collections, and favorites.
-            - **Live Search & Filter**: Real-time filtering with platform chips and full-text search.
-            - **Material 3 UI**: 5-tab Bottom Navigation (Home, Inbox, Library, Ask, Profile).
+            ### What's New in Phase 2:
+            - **Real-Time Duplicate Detection**: Automatically identifies previously saved links by canonical URL matching, displays a prominent duplicate banner, pre-fills previous metadata, and seamlessly updates existing records.
+            - **Live Inbox Badge Counter**: Real-time counter badge on the Bottom Navigation `Inbox` tab, indicating items awaiting triage and organization.
+            - **Quick "Move to Collection" Triage**: Rapidly assign items to existing collections or create new collections directly from content cards and overflow menus.
+            - **Inbox Triage Header & Inbox Zero**: Visual triage progress header and celebrated "Inbox Zero" empty state when all content is neatly organized.
+            - **Saved Confirmation Experience**: Material 3 confirmation snackbar with direct "View in Inbox" shortcut.
+            - **Unit Tests**: Full canonical URL normalization and duplicate matching test suite.
           files: |
-            release_records/phase_01_capture_mvp/v0.1.0/Hifadhio-v0.1.0-phase1-debug.apk
-            release_records/phase_01_capture_mvp/v0.1.0/Hifadhio-v0.1.0-phase1-debug.zip
+            release_records/phase_02_capture_triage/v0.2.0/Hifadhio-v0.2.0-phase2-debug.apk
+            release_records/phase_02_capture_triage/v0.2.0/Hifadhio-v0.2.0-phase2-debug.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
