@@ -18,11 +18,11 @@ Latest migration: 003_processing_jobs_and_events
 - Phase 05 — Adapter Framework + Generic Web Metadata: Standardized `ContentExtractorAdapter` interface, `ContentAdapterRegistry` with prioritized routing and health checks, and `GenericWebAdapter` with OpenGraph & HTML metadata extraction, entity decoding, and relative URL resolution.
 
 ## Current phase
-Phase 05 — Adapter Framework + Generic Web Metadata (COMPLETED)
-Next: Phase 06 — Official Platform Metadata Integrations
+Phase 06 — Official Platform Metadata Integrations
+Next: Phase 07 — Object Storage and Controlled Media Pipeline
 
 ## Current status
-READY_FOR_ACCEPTANCE
+IN_PROGRESS
 
 ## Current implemented capabilities
 - Android native share target for `ACTION_SEND` (`text/plain`)

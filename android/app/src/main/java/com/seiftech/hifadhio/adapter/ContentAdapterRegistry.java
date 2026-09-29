@@ -35,7 +35,12 @@ public class ContentAdapterRegistry {
     private void initDefaults() {
         defaultFallbackAdapter = new GenericWebAdapter();
         registerAdapter(defaultFallbackAdapter);
-        registerAdapter(new FacebookAdapter());
+        registerAdapter(new YouTubeAdapter());     // Priority 90
+        registerAdapter(new TikTokAdapter());      // Priority 85
+        registerAdapter(new InstagramAdapter());   // Priority 80
+        registerAdapter(new FacebookAdapter());    // Priority 80
+        registerAdapter(new RedditAdapter());      // Priority 75
+        registerAdapter(new XAdapter());           // Priority 75
     }
 
     /**

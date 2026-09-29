@@ -1,4 +1,4 @@
-name: Build Hifadhio Phase 5 APK
+name: Build Hifadhio Phase 6 APK
 
 on:
   push:
@@ -43,45 +43,47 @@ jobs:
 
       - name: Prepare Release Artifacts
         run: |
-          mkdir -p release_records/phase_05_adapter_framework/v0.5.1/
-          cp android/app/build/outputs/apk/debug/app-debug.apk release_records/phase_05_adapter_framework/v0.5.1/Hifadhio-v0.5.1-phase5-debug.apk
-          cd release_records/phase_05_adapter_framework/v0.5.1/
-          zip -9 Hifadhio-v0.5.1-phase5-debug.zip Hifadhio-v0.5.1-phase5-debug.apk
-          sha256sum Hifadhio-v0.5.1-phase5-debug.apk > SHA256SUMS.txt
-          sha256sum Hifadhio-v0.5.1-phase5-debug.zip >> SHA256SUMS.txt
+          mkdir -p release_records/phase_06_platform_adapters/v0.6.0/
+          cp android/app/build/outputs/apk/debug/app-debug.apk release_records/phase_06_platform_adapters/v0.6.0/Hifadhio-v0.6.0-phase6-debug.apk
+          cd release_records/phase_06_platform_adapters/v0.6.0/
+          zip -9 Hifadhio-v0.6.0-phase6-debug.zip Hifadhio-v0.6.0-phase6-debug.apk
+          sha256sum Hifadhio-v0.6.0-phase6-debug.apk > SHA256SUMS.txt
+          sha256sum Hifadhio-v0.6.0-phase6-debug.zip >> SHA256SUMS.txt
           cat SHA256SUMS.txt
           cd ../../..
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Hifadhio-v0.5.1-phase5-debug
+          name: Hifadhio-v0.6.0-phase6-debug
           path: |
-            release_records/phase_05_adapter_framework/v0.5.1/Hifadhio-v0.5.1-phase5-debug.apk
-            release_records/phase_05_adapter_framework/v0.5.1/Hifadhio-v0.5.1-phase5-debug.zip
+            release_records/phase_06_platform_adapters/v0.6.0/Hifadhio-v0.6.0-phase6-debug.apk
+            release_records/phase_06_platform_adapters/v0.6.0/Hifadhio-v0.6.0-phase6-debug.zip
           if-no-files-found: error
 
       - name: Create GitHub Release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.5.1-phase5
-          name: "Hifadhio v0.5.1 (Phase 5 Corrective: Facebook Adapter, HTTPS Redirects & UI Polish)"
+          tag_name: v0.6.0-phase6
+          name: "Hifadhio v0.6.0 (Phase 6: Official Platform Metadata Integrations)"
           body: |
-            ## Hifadhio v0.5.1 — Phase 5 Corrective Patch Release
+            ## Hifadhio v0.6.0 — Phase 6 Platform Metadata Integrations Release
 
             > **Save once. Find it when it matters.**
             > A NAS Digital Solutions product - engineered by SeifTech.
 
-            ### What's Fixed in v0.5.1:
-            - **Facebook Reel & Share Adapter**: Created specialized `FacebookAdapter` (Priority 80) that recognizes `facebook.com/share/r/...`, canonicalizes to `https://www.facebook.com/reel/<id>/`, and provides graceful, reliable metadata fallback preventing HTTP 400 crashes and retry loops.
-            - **HTTPS Redirect Upgrade**: Patched `GenericWebAdapter` to automatically upgrade HTTP redirects to HTTPS, resolving cleartext HTTP rejections on institutional sites like `fao.org`.
-            - **Scheduled Retry Execution**: Integrated `ScheduledExecutorService` into `ProcessingJobManager` ensuring retries fire precisely after backoff delay (2s, 4s, 8s, up to 60s) rather than remaining indefinitely in `RETRYING`.
-            - **Separated User Status vs Developer Diagnostics**: Default UI shows simple, friendly states (`Preparing link`, `Reading page details`, `Extracting details`, `Ready`, `Could not analyze this link`, `Retrying automatically`, `Tap to retry`), while raw worker IDs, HTTP status codes, and stack traces are relegated to a collapsible Developer Diagnostics section.
-            - **High-Contrast Dialog Theme**: Fixed delete confirmation dialog theme with high-contrast surfaces, readable text, and a distinct red destructive Delete action in both light and dark themes.
-            - **Unit Test Coverage**: Added comprehensive test suites covering URL classification, HTTPS upgrades, Facebook canonicalization, retry backoffs, and adapter registration.
+            ### What's New in v0.6.0:
+            - **YouTube Adapter (`YouTubeAdapter`, Priority 90)**: Extracts official video metadata using YouTube's public oEmbed service. Full support for standard watch links, `youtu.be` short links, YouTube Shorts, Live streams, and high-resolution thumbnail generation (`hqdefault.jpg`). Deterministic offline fallback.
+            - **TikTok Adapter (`TikTokAdapter`, Priority 85)**: Canonicalizes direct video links (`tiktok.com/@user/video/...`) and short links (`vt.tiktok.com`, `vm.tiktok.com`). Queries official TikTok oEmbed service to extract video titles, creator handles, and cover images with structured fallback.
+            - **Instagram Adapter (`InstagramAdapter`, Priority 80)**: Canonicalizes Reels, Posts, and IGTV URLs, cleanly strips tracking queries (`igshid`), and extracts structured metadata with bot-block fallback protection.
+            - **Reddit Adapter (`RedditAdapter`, Priority 75)**: Canonicalizes subreddit comment threads (`reddit.com/r/.../comments/...`), short links (`redd.it`), and extracts post metadata via official Reddit oEmbed.
+            - **X / Twitter Adapter (`XAdapter`, Priority 75)**: Canonicalizes `x.com` and `twitter.com` status links, fetches official publish oEmbed snippets, and captures author handles.
+            - **Lightweight Shared Network Client (`HttpFetchHelper`)**: Enforces bounded reads (512KB), standard mobile User-Agent, HTTPS redirect promotion, and network timeouts.
+            - **Full Registry Integration**: Priority routing in `ContentAdapterRegistry` ensures specialized platform adapters take precedence while `GenericWebAdapter` remains the universal fallback.
+            - **Test Coverage**: 13 unit test suites covering canonicalization, fallback hierarchy, registry priority, and oEmbed parsing.
           files: |
-            release_records/phase_05_adapter_framework/v0.5.1/Hifadhio-v0.5.1-phase5-debug.apk
-            release_records/phase_05_adapter_framework/v0.5.1/Hifadhio-v0.5.1-phase5-debug.zip
+            release_records/phase_06_platform_adapters/v0.6.0/Hifadhio-v0.6.0-phase6-debug.apk
+            release_records/phase_06_platform_adapters/v0.6.0/Hifadhio-v0.6.0-phase6-debug.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
