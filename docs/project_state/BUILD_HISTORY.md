@@ -8,3 +8,4 @@
 | 2026-09-29 | Phase 05 | 0.5.0-phase5 | APK Debug | SUCCESS | 6.0 MB (6,287,227 bytes) | `c30aa...` | GitHub Actions Build #36514529976. Modular adapter framework & GenericWebAdapter. |
 | 2026-09-29 | Phase 05 | 0.5.1-phase5 | APK Debug | SUCCESS | 6.0 MB (6,293,867 bytes) | `92f93...` | GitHub Actions Build #36519826415. FacebookAdapter, HTTPS redirects & high-contrast dialogs. |
 | 2026-09-29 | Phase 06 | 0.6.0-phase6 | APK Debug | SUCCESS | 6.0 MB (6,300,571 bytes) | `36c970d4fdc5ba0168a1f0e456138ae1ae81c4daca827f86b10e6cadc471b337` | GitHub Actions Build #36594437363. Official platform adapters: YouTube, TikTok, Instagram, Reddit, X. |
+| 2026-09-29 | Phase 07 | 0.7.0-phase7 | APK Debug | SUCCESS | 6.0 MB (6,315,409 bytes) | `a9b38bec9ea443949710a98ec2dfe1b81500738039283894d3c38ed87bc0c94a` | GitHub Actions Build #36606195301. Object storage, Schema v4 artifacts table, MediaCleanupWorker, FileProvider scoped access. |
