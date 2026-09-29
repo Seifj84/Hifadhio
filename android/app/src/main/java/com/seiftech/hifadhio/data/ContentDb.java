@@ -198,9 +198,17 @@ public class ContentDb extends SQLiteOpenHelper {
         return findByCanonicalUrl(canonicalUrl) != null;
     }
 
+    public List<ContentItem> getAll() {
+        return search("", "All", "All");
+    }
+
     public List<ContentItem> getAllItems() {
+        return getAll();
+    }
+
+    public List<ContentItem> getRecent(int limit) {
         List<ContentItem> list = new ArrayList<>();
-        Cursor c = getReadableDatabase().query(TABLE_ITEMS, null, null, null, null, null, "saved_at DESC");
+        Cursor c = getReadableDatabase().query(TABLE_ITEMS, null, null, null, null, null, "saved_at DESC", String.valueOf(limit));
         try {
             while (c.moveToNext()) {
                 list.add(fromCursor(c));
@@ -212,20 +220,15 @@ public class ContentDb extends SQLiteOpenHelper {
     }
 
     public List<ContentItem> getInboxItems() {
-        List<ContentItem> list = new ArrayList<>();
-        Cursor c = getReadableDatabase().query(TABLE_ITEMS, null, "collection_name=?", new String[]{"Inbox"}, null, null, "saved_at DESC");
-        try {
-            while (c.moveToNext()) {
-                list.add(fromCursor(c));
-            }
-        } finally {
-            c.close();
-        }
-        return list;
+        return search("", "All", "Inbox");
     }
 
     public int getInboxCount() {
-        Cursor c = getReadableDatabase().rawQuery("SELECT COUNT(*) FROM " + TABLE_ITEMS + " WHERE collection_name='Inbox'", null);
+        return getCountByCollection("Inbox");
+    }
+
+    public int getCountByCollection(String collection) {
+        Cursor c = getReadableDatabase().rawQuery("SELECT COUNT(*) FROM " + TABLE_ITEMS + " WHERE collection_name = ?", new String[]{collection});
         try {
             if (c.moveToFirst()) {
                 return c.getInt(0);
@@ -237,19 +240,10 @@ public class ContentDb extends SQLiteOpenHelper {
     }
 
     public List<ContentItem> getItemsByCollection(String collection) {
-        List<ContentItem> list = new ArrayList<>();
-        Cursor c = getReadableDatabase().query(TABLE_ITEMS, null, "collection_name=?", new String[]{collection}, null, null, "saved_at DESC");
-        try {
-            while (c.moveToNext()) {
-                list.add(fromCursor(c));
-            }
-        } finally {
-            c.close();
-        }
-        return list;
+        return search("", "All", collection);
     }
 
-    public List<ContentItem> getFavoriteItems() {
+    public List<ContentItem> getFavorites() {
         List<ContentItem> list = new ArrayList<>();
         Cursor c = getReadableDatabase().query(TABLE_ITEMS, null, "is_favorite=1", null, null, null, "saved_at DESC");
         try {
@@ -262,7 +256,11 @@ public class ContentDb extends SQLiteOpenHelper {
         return list;
     }
 
-    public int getFavoriteCount() {
+    public List<ContentItem> getFavoriteItems() {
+        return getFavorites();
+    }
+
+    public int getFavoritesCount() {
         Cursor c = getReadableDatabase().rawQuery("SELECT COUNT(*) FROM " + TABLE_ITEMS + " WHERE is_favorite=1", null);
         try {
             if (c.moveToFirst()) {
@@ -274,28 +272,44 @@ public class ContentDb extends SQLiteOpenHelper {
         return 0;
     }
 
+    public int getFavoriteCount() {
+        return getFavoritesCount();
+    }
+
     public List<ContentItem> getItemsByPlatform(String platform) {
-        List<ContentItem> list = new ArrayList<>();
-        Cursor c = getReadableDatabase().query(TABLE_ITEMS, null, "platform=?", new String[]{platform}, null, null, "saved_at DESC");
-        try {
-            while (c.moveToNext()) {
-                list.add(fromCursor(c));
-            }
-        } finally {
-            c.close();
-        }
-        return list;
+        return search("", platform, "All");
     }
 
     public List<ContentItem> search(String query) {
+        return search(query, "All", "All");
+    }
+
+    public List<ContentItem> search(String query, String platformFilter, String collectionFilter) {
         List<ContentItem> list = new ArrayList<>();
-        if (query == null || query.trim().isEmpty()) {
-            return getAllItems();
+        StringBuilder sql = new StringBuilder("SELECT * FROM " + TABLE_ITEMS + " WHERE 1=1");
+        List<String> args = new ArrayList<>();
+
+        if (query != null && !query.trim().isEmpty()) {
+            String q = "%" + query.trim() + "%";
+            sql.append(" AND (title LIKE ? OR original_title LIKE ? OR caption LIKE ? OR notes LIKE ? OR tags LIKE ? OR url LIKE ? OR platform LIKE ? OR collection_name LIKE ?)");
+            for (int i = 0; i < 8; i++) {
+                args.add(q);
+            }
         }
-        String pattern = "%" + query.trim() + "%";
-        String selection = "title LIKE ? OR original_title LIKE ? OR caption LIKE ? OR notes LIKE ? OR tags LIKE ? OR url LIKE ? OR platform LIKE ? OR collection_name LIKE ?";
-        String[] args = new String[]{pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern};
-        Cursor c = getReadableDatabase().query(TABLE_ITEMS, null, selection, args, null, null, "saved_at DESC");
+
+        if (platformFilter != null && !platformFilter.isEmpty() && !"All".equalsIgnoreCase(platformFilter)) {
+            sql.append(" AND platform = ?");
+            args.add(platformFilter);
+        }
+
+        if (collectionFilter != null && !collectionFilter.isEmpty() && !"All".equalsIgnoreCase(collectionFilter)) {
+            sql.append(" AND collection_name = ?");
+            args.add(collectionFilter);
+        }
+
+        sql.append(" ORDER BY saved_at DESC");
+
+        Cursor c = getReadableDatabase().rawQuery(sql.toString(), args.toArray(new String[0]));
         try {
             while (c.moveToNext()) {
                 list.add(fromCursor(c));
@@ -315,10 +329,17 @@ public class ContentDb extends SQLiteOpenHelper {
 
     public List<String> getCollections() {
         List<String> list = new ArrayList<>();
-        Cursor c = getReadableDatabase().query(TABLE_COLLECTIONS, new String[]{"name"}, null, null, null, null, "name ASC");
+        list.add("Inbox");
+        String sql = "SELECT name FROM " + TABLE_COLLECTIONS + " " +
+                "UNION SELECT DISTINCT collection_name AS name FROM " + TABLE_ITEMS + " WHERE collection_name IS NOT NULL AND collection_name != '' " +
+                "ORDER BY name ASC";
+        Cursor c = getReadableDatabase().rawQuery(sql, null);
         try {
             while (c.moveToNext()) {
-                list.add(c.getString(0));
+                String name = c.getString(0);
+                if (name != null && !name.trim().isEmpty() && !list.contains(name.trim())) {
+                    list.add(name.trim());
+                }
             }
         } finally {
             c.close();
@@ -326,31 +347,48 @@ public class ContentDb extends SQLiteOpenHelper {
         return list;
     }
 
-    public List<CollectionStat> getCollectionStats() {
-        List<CollectionStat> stats = new ArrayList<>();
-        List<String> collections = getCollections();
-        for (String cName : collections) {
-            Cursor c = getReadableDatabase().rawQuery("SELECT COUNT(*) FROM " + TABLE_ITEMS + " WHERE collection_name=?", new String[]{cName});
-            int count = 0;
-            try {
-                if (c.moveToFirst()) {
-                    count = c.getInt(0);
+    public List<CollectionStat> getCollectionsWithCounts() {
+        List<CollectionStat> result = new ArrayList<>();
+        int inboxCount = getInboxCount();
+        result.add(new CollectionStat("Inbox", inboxCount));
+
+        String sql = "SELECT c.name, COUNT(i.id) AS cnt " +
+                "FROM (SELECT name FROM " + TABLE_COLLECTIONS + " " +
+                "      UNION SELECT DISTINCT collection_name AS name FROM " + TABLE_ITEMS + " WHERE collection_name IS NOT NULL AND collection_name != '') c " +
+                "LEFT JOIN " + TABLE_ITEMS + " i ON c.name = i.collection_name " +
+                "WHERE c.name != 'Inbox' " +
+                "GROUP BY c.name ORDER BY c.name ASC";
+
+        Cursor cursor = getReadableDatabase().rawQuery(sql, null);
+        try {
+            while (cursor.moveToNext()) {
+                String colName = cursor.getString(0);
+                int count = cursor.getInt(1);
+                if (colName != null && !colName.trim().isEmpty() && !colName.equalsIgnoreCase("Inbox")) {
+                    result.add(new CollectionStat(colName.trim(), count));
                 }
-            } finally {
-                c.close();
             }
-            stats.add(new CollectionStat(cName, count));
+        } finally {
+            cursor.close();
         }
-        return stats;
+        return result;
     }
 
-    public boolean addCollection(String name) {
+    public List<CollectionStat> getCollectionStats() {
+        return getCollectionsWithCounts();
+    }
+
+    public boolean createCollection(String name) {
         if (name == null || name.trim().isEmpty()) return false;
         ContentValues cv = new ContentValues();
         cv.put("name", name.trim());
         cv.put("created_at", System.currentTimeMillis());
         long res = getWritableDatabase().insertWithOnConflict(TABLE_COLLECTIONS, null, cv, SQLiteDatabase.CONFLICT_IGNORE);
         return res != -1;
+    }
+
+    public boolean addCollection(String name) {
+        return createCollection(name);
     }
 
     public boolean renameCollection(String oldName, String newName) {
@@ -375,28 +413,37 @@ public class ContentDb extends SQLiteOpenHelper {
         }
     }
 
-    public boolean deleteCollection(String name) {
-        if (name == null || "Inbox".equalsIgnoreCase(name)) return false;
+    public boolean deleteCollection(String name, boolean moveItemsToInbox) {
+        if (name == null || name.trim().equalsIgnoreCase("Inbox")) return false;
+        String trimmed = name.trim();
         SQLiteDatabase db = getWritableDatabase();
         db.beginTransaction();
         try {
-            int deleted = db.delete(TABLE_COLLECTIONS, "name=?", new String[]{name});
-            if (deleted > 0) {
+            db.delete(TABLE_COLLECTIONS, "name=?", new String[]{trimmed});
+            if (moveItemsToInbox) {
                 ContentValues cv = new ContentValues();
                 cv.put("collection_name", "Inbox");
-                db.update(TABLE_ITEMS, cv, "collection_name=?", new String[]{name});
-                db.setTransactionSuccessful();
-                return true;
+                cv.put("updated_at", System.currentTimeMillis());
+                db.update(TABLE_ITEMS, cv, "collection_name=?", new String[]{trimmed});
+            } else {
+                db.delete(TABLE_ITEMS, "collection_name=?", new String[]{trimmed});
             }
+            db.setTransactionSuccessful();
+            return true;
+        } catch (Exception e) {
             return false;
         } finally {
             db.endTransaction();
         }
     }
 
+    public boolean deleteCollection(String name) {
+        return deleteCollection(name, true);
+    }
+
     public List<String> getAllTags() {
         List<String> tags = new ArrayList<>();
-        Cursor c = getReadableDatabase().query(TABLE_ITEMS, new String[]{"tags"}, "tags IS NOT NULL AND tags != ''", null, null, null, null);
+        Cursor c = getReadableDatabase().rawQuery("SELECT tags FROM " + TABLE_ITEMS + " WHERE tags IS NOT NULL AND tags != ''", null);
         try {
             while (c.moveToNext()) {
                 String raw = c.getString(0);
@@ -404,8 +451,11 @@ public class ContentDb extends SQLiteOpenHelper {
                     String[] parts = raw.split("[,\\s]+");
                     for (String p : parts) {
                         String clean = p.trim().replaceAll("^#+", "");
-                        if (!clean.isEmpty() && !tags.contains(clean)) {
-                            tags.add(clean);
+                        if (!clean.isEmpty()) {
+                            String formatted = "#" + clean;
+                            if (!tags.contains(formatted)) {
+                                tags.add(formatted);
+                            }
                         }
                     }
                 }
@@ -416,20 +466,14 @@ public class ContentDb extends SQLiteOpenHelper {
         return tags;
     }
 
+    public List<ContentItem> getByTag(String tag) {
+        if (tag == null || tag.trim().isEmpty()) return new ArrayList<>();
+        String clean = tag.replace("#", "").trim();
+        return search(clean, "All", "All");
+    }
+
     public List<ContentItem> getItemsByTag(String tag) {
-        List<ContentItem> list = new ArrayList<>();
-        if (tag == null || tag.trim().isEmpty()) return list;
-        String cleanTag = tag.trim().replaceAll("^#+", "");
-        String pattern = "%" + cleanTag + "%";
-        Cursor c = getReadableDatabase().query(TABLE_ITEMS, null, "tags LIKE ?", new String[]{pattern}, null, null, "saved_at DESC");
-        try {
-            while (c.moveToNext()) {
-                list.add(fromCursor(c));
-            }
-        } finally {
-            c.close();
-        }
-        return list;
+        return getByTag(tag);
     }
 
     public int getTotalCount() {
@@ -791,6 +835,10 @@ public class ContentDb extends SQLiteOpenHelper {
         event.setMetadataJson(c.getString(c.getColumnIndexOrThrow("metadata_json")));
         event.setCreatedAt(c.getLong(c.getColumnIndexOrThrow("created_at")));
         return event;
+    }
+
+    public String exportToJson() {
+        return exportJson();
     }
 
     public String exportJson() {
