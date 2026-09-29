@@ -21,6 +21,10 @@ public class ContentItem implements Serializable {
 
     public ContentItem() {}
 
+    public ContentItem(String url) {
+        this(url, "Web");
+    }
+
     public ContentItem(String url, String platform) {
         this.url = url;
         this.platform = platform;
