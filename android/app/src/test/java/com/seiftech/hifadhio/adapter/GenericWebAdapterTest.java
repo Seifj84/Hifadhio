@@ -140,7 +140,7 @@ public class GenericWebAdapterTest {
         assertNotNull(fallback);
         assertEquals("fao.org Page", fallback.getTitle());
         assertEquals("fao.org Page", fallback.getOriginalTitle());
-        assertEquals(testUrl, fallback.getCanonicalUrl());
+        assertEquals("https://fao.org/home/en", fallback.getCanonicalUrl());
         assertEquals("Web", fallback.getPlatform());
         assertTrue(fallback.getDescription().contains("Page saved securely"));
     }
