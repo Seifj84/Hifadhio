@@ -82,14 +82,19 @@ public class MainActivity extends AppCompatActivity {
             int id = item.getItemId();
             if (id == R.id.nav_home) {
                 target = homeFragment;
+                if (fabAdd != null) fabAdd.extend();
             } else if (id == R.id.nav_inbox) {
                 target = inboxFragment;
+                if (fabAdd != null) fabAdd.shrink();
             } else if (id == R.id.nav_library) {
                 target = libraryFragment;
+                if (fabAdd != null) fabAdd.shrink();
             } else if (id == R.id.nav_ask) {
                 target = askFragment;
+                if (fabAdd != null) fabAdd.shrink();
             } else if (id == R.id.nav_profile) {
                 target = profileFragment;
+                if (fabAdd != null) fabAdd.shrink();
             }
 
             getSupportFragmentManager().beginTransaction()
@@ -119,6 +124,8 @@ public class MainActivity extends AppCompatActivity {
             badge.setNumber(count);
             badge.setBackgroundColor(ContextCompat.getColor(this, R.color.mint));
             badge.setBadgeTextColor(ContextCompat.getColor(this, R.color.primary_navy));
+            badge.setVerticalOffset(4);
+            badge.setHorizontalOffset(4);
         } else {
             badge.setVisible(false);
             badge.clearNumber();

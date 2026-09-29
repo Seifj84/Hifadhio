@@ -5,10 +5,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="16dp"
     android:background="@color/background">
 
+    <!-- Header Section -->
     <TextView
+        android:id="@+id/tv_inbox_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Capture Inbox"
@@ -16,7 +20,9 @@
         android:textSize="22sp"
         android:textStyle="bold" />
 
+    <!-- Triage Status Row -->
     <LinearLayout
+        android:id="@+id/layout_inbox_triage_header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
@@ -33,38 +39,47 @@
             android:paddingEnd="10dp"
             android:paddingTop="3dp"
             android:paddingBottom="3dp"
-            android:text="0 to triage"
+            android:text="1 item to triage"
             android:textColor="@color/mint"
             android:textSize="12sp"
             android:textStyle="bold" />
 
         <TextView
+            android:id="@+id/tv_inbox_helper"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:text="Tap collection or menu to organize"
+            android:text="Organize saved links into collections."
             android:textColor="@color/text_secondary"
             android:textSize="12sp" />
     </LinearLayout>
 
+    <!-- Content Items List -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_inbox"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingBottom="88dp" />
 
+    <!-- Compact Empty State -->
     <LinearLayout
         android:id="@+id/layout_inbox_empty"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:gravity="center"
         android:orientation="vertical"
+        android:paddingStart="32dp"
+        android:paddingEnd="32dp"
+        android:paddingBottom="64dp"
         android:visibility="gone">
 
         <ImageView
-            android:layout_width="64dp"
-            android:layout_height="64dp"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
             android:src="@drawable/ic_inbox"
             app:tint="@color/mint" />
 
@@ -72,20 +87,18 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Inbox Zero"
+            android:text="Inbox cleared"
             android:textColor="@color/text_primary"
-            android:textSize="20sp"
+            android:textSize="18sp"
             android:textStyle="bold" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:layout_marginStart="32dp"
-            android:layout_marginEnd="32dp"
             android:gravity="center"
-            android:text="All captured content has been organized into collections. Your digital brain is clean."
+            android:text="New links you share to Hifadhio will appear here before you organize them."
             android:textColor="@color/text_secondary"
-            android:textSize="14sp" />
+            android:textSize="13sp" />
     </LinearLayout>
 </LinearLayout>

@@ -80,10 +80,71 @@ public class ContentItem implements Serializable {
         if (originalTitle != null && !originalTitle.trim().isEmpty()) {
             return originalTitle.trim();
         }
-        if (url != null && !url.trim().isEmpty()) {
-            String clean = url.replace("https://", "").replace("http://", "").replace("www.", "");
-            return clean.length() > 50 ? clean.substring(0, 47) + "…" : clean;
+        return getPlatformTypeFallback();
+    }
+
+    public String getPlatformTypeFallback() {
+        String lowerUrl = url != null ? url.toLowerCase(java.util.Locale.ROOT) : "";
+        String p = getPlatform();
+
+        if ("Facebook".equalsIgnoreCase(p)) {
+            if (lowerUrl.contains("/reel/") || lowerUrl.contains("/reels/") || lowerUrl.contains("/r/")) {
+                return "Facebook Reel";
+            } else if (lowerUrl.contains("/watch/") || lowerUrl.contains("fb.watch")) {
+                return "Facebook video";
+            } else if (lowerUrl.contains("/posts/") || lowerUrl.contains("/post/") || lowerUrl.contains("/photo/")) {
+                return "Facebook post";
+            }
+            return "Facebook link";
+        } else if ("Instagram".equalsIgnoreCase(p)) {
+            if (lowerUrl.contains("/reel/") || lowerUrl.contains("/reels/")) {
+                return "Instagram Reel";
+            } else if (lowerUrl.contains("/p/")) {
+                return "Instagram post";
+            }
+            return "Instagram link";
+        } else if ("YouTube".equalsIgnoreCase(p)) {
+            if (lowerUrl.contains("/shorts/")) {
+                return "YouTube Short";
+            } else if (lowerUrl.contains("/watch") || lowerUrl.contains("youtu.be")) {
+                return "YouTube video";
+            }
+            return "YouTube link";
+        } else if ("TikTok".equalsIgnoreCase(p)) {
+            if (lowerUrl.contains("/video/") || lowerUrl.contains("/v/")) {
+                return "TikTok video";
+            }
+            return "TikTok link";
+        } else if ("X".equalsIgnoreCase(p)) {
+            if (lowerUrl.contains("/status/")) {
+                return "X post";
+            }
+            return "X link";
         }
-        return "Untitled Link";
+
+        String domain = getDomainPreview();
+        if (!domain.isEmpty()) {
+            return domain + " link";
+        }
+        return "Saved link";
+    }
+
+    public String getDomainPreview() {
+        if (url == null || url.trim().isEmpty()) return "";
+        try {
+            java.net.URI uri = new java.net.URI(url.trim());
+            String host = uri.getHost();
+            if (host != null) {
+                if (host.startsWith("www.")) host = host.substring(4);
+                return host.toLowerCase(java.util.Locale.ROOT);
+            }
+        } catch (Exception ignored) {}
+
+        String clean = url.replace("https://", "").replace("http://", "").replace("www.", "");
+        int slash = clean.indexOf("/");
+        if (slash > 0) {
+            clean = clean.substring(0, slash);
+        }
+        return clean.toLowerCase(java.util.Locale.ROOT);
     }
 }

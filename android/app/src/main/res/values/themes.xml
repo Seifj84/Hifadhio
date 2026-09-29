@@ -23,6 +23,33 @@
         <!-- Text Colors -->
         <item name="android:textColorPrimary">@color/text_primary</item>
         <item name="android:textColorSecondary">@color/text_secondary</item>
+
+        <!-- Popup Menu Styling -->
+        <item name="popupMenuStyle">@style/Widget.Hifadhio.PopupMenu</item>
+        <item name="android:popupMenuStyle">@style/Widget.Hifadhio.PopupMenu</item>
+        <item name="popupTheme">@style/ThemeOverlay.Hifadhio.Popup</item>
+    </style>
+
+    <!-- High-Contrast Readable Popup Menu -->
+    <style name="Widget.Hifadhio.PopupMenu" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@drawable/bg_popup_menu</item>
+        <item name="android:popupElevation">8dp</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:dropDownVerticalOffset">4dp</item>
+    </style>
+
+    <style name="ThemeOverlay.Hifadhio.Popup" parent="ThemeOverlay.Material3">
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="android:colorBackground">@color/surface</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:itemTextAppearance">@style/TextAppearance.Hifadhio.PopupItem</item>
+    </style>
+
+    <style name="TextAppearance.Hifadhio.PopupItem" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">14sp</item>
     </style>
 
     <!-- Toolbar Title & Subtitle Styling -->
@@ -63,8 +90,8 @@
         <item name="itemTextAppearanceActive">@style/TextAppearance.Hifadhio.BottomNav.Active</item>
         <item name="itemTextAppearanceInactive">@style/TextAppearance.Hifadhio.BottomNav.Inactive</item>
         <item name="labelVisibilityMode">labeled</item>
-        <item name="itemPaddingTop">10dp</item>
-        <item name="itemPaddingBottom">10dp</item>
+        <item name="itemPaddingTop">4dp</item>
+        <item name="itemPaddingBottom">6dp</item>
         <item name="android:background">@color/surface</item>
         <item name="elevation">8dp</item>
     </style>

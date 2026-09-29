@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView
+<com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
     app:cardCornerRadius="16dp"
-    app:cardElevation="2dp"
+    app:cardElevation="1dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="@color/divider"
     app:cardBackgroundColor="@color/surface">
 
     <LinearLayout
@@ -15,7 +17,7 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Top Row: Platform pill badge, Collection pill, Date, More button -->
+        <!-- Row 1: Platform Chip, Collection Status Pill, Relative Time, More Options Button -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -27,23 +29,32 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_pill_badge"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
                 android:paddingTop="3dp"
                 android:paddingBottom="3dp"
-                android:text="Instagram"
-                android:textColor="@color/platform_instagram"
-                android:textSize="12sp"
+                android:text="Facebook"
+                android:textColor="@color/platform_facebook"
+                android:textSize="11sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/tv_card_collection"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="Inbox"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/bg_collection_chip"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="Inbox ▾"
                 android:textColor="@color/text_secondary"
-                android:textSize="12sp" />
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="Collection. Tap to organize." />
 
             <View
                 android:layout_width="0dp"
@@ -54,20 +65,23 @@
                 android:id="@+id/tv_card_date"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="6dp"
-                android:text="Today"
+                android:layout_marginEnd="4dp"
+                android:text="Just now"
                 android:textColor="@color/text_secondary"
                 android:textSize="11sp" />
 
             <ImageView
                 android:id="@+id/btn_card_more"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:padding="10dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="More options"
                 android:src="@drawable/ic_more"
                 app:tint="@color/text_secondary" />
         </LinearLayout>
 
-        <!-- Title -->
+        <!-- Row 2: Human-readable Title -->
         <TextView
             android:id="@+id/tv_card_title"
             android:layout_width="match_parent"
@@ -75,24 +89,25 @@
             android:layout_marginTop="8dp"
             android:ellipsize="end"
             android:maxLines="2"
-            android:text="Content Item Title"
+            android:text="Facebook link"
             android:textColor="@color/text_primary"
-            android:textSize="16sp"
+            android:textSize="15sp"
             android:textStyle="bold" />
 
-        <!-- Canonical URL -->
+        <!-- Row 3: Domain Preview / URL preview -->
         <TextView
             android:id="@+id/tv_card_url"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
+            android:layout_marginTop="2dp"
             android:ellipsize="end"
+            android:maxLines="1"
             android:singleLine="true"
-            android:text="https://instagram.com/reel/..."
-            android:textColor="@color/blue"
+            android:text="facebook.com"
+            android:textColor="@color/text_secondary"
             android:textSize="12sp" />
 
-        <!-- Caption Snippet -->
+        <!-- Caption Snippet (optional) -->
         <TextView
             android:id="@+id/tv_card_caption"
             android:layout_width="match_parent"
@@ -100,16 +115,17 @@
             android:layout_marginTop="6dp"
             android:ellipsize="end"
             android:maxLines="2"
-            android:text="Snippet or description excerpt goes here..."
+            android:text="Snippet excerpt..."
             android:textColor="@color/text_secondary"
-            android:textSize="13sp" />
+            android:textSize="13sp"
+            android:visibility="gone" />
 
-        <!-- User Note -->
+        <!-- User Note (optional) -->
         <LinearLayout
             android:id="@+id/layout_card_notes"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="6dp"
             android:background="@drawable/bg_rounded_card"
             android:padding="8dp"
             android:visibility="gone">
@@ -120,18 +136,18 @@
                 android:layout_height="wrap_content"
                 android:text="Note: My thoughts..."
                 android:textColor="@color/text_primary"
-                android:textSize="13sp" />
+                android:textSize="12sp" />
         </LinearLayout>
 
-        <!-- Divider -->
+        <!-- Subtle Divider -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:layout_marginTop="12dp"
-            android:layout_marginBottom="10dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="6dp"
             android:background="@color/divider" />
 
-        <!-- Bottom Actions Row -->
+        <!-- Row 4: Direct Actions (Open, Organize, Favorite) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -142,21 +158,33 @@
                 android:id="@+id/btn_card_open"
                 style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Open Link"
+                android:layout_height="36dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="12dp"
+                android:text="Open"
                 android:textColor="@color/primary_navy"
+                android:textSize="13sp"
                 app:icon="@drawable/ic_open"
+                app:iconSize="16dp"
                 app:iconTint="@color/primary_navy" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_card_share"
+                android:id="@+id/btn_card_organize"
                 style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="Share"
+                android:layout_height="36dp"
+                android:layout_marginStart="4dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="12dp"
+                android:text="Organize"
                 android:textColor="@color/text_secondary"
-                app:icon="@drawable/ic_share"
+                android:textSize="13sp"
+                app:icon="@drawable/ic_library"
+                app:iconSize="16dp"
                 app:iconTint="@color/text_secondary" />
 
             <View
@@ -166,10 +194,13 @@
 
             <ImageView
                 android:id="@+id/btn_card_fav"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:padding="6dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Favorite"
                 android:src="@drawable/ic_star_outline"
                 app:tint="@color/amber" />
         </LinearLayout>
     </LinearLayout>
-</androidx.cardview.widget.CardView>
+</com.google.android.material.card.MaterialCardView>

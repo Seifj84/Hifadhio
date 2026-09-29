@@ -2,9 +2,10 @@ package com.seiftech.hifadhio.ui;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.ColorStateList;
 import android.net.Uri;
-import android.text.format.DateUtils;
+import android.text.SpannableString;
+import android.text.style.ForegroundColorSpan;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -14,6 +15,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.view.ContextThemeWrapper;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
@@ -22,6 +24,7 @@ import com.seiftech.hifadhio.R;
 import com.seiftech.hifadhio.data.ContentDb;
 import com.seiftech.hifadhio.data.ContentItem;
 import com.seiftech.hifadhio.data.PlatformDetector;
+import com.seiftech.hifadhio.data.TimeUtils;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -66,18 +69,15 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ViewHold
         int platformColor = ContextCompat.getColor(context, colorRes);
         h.tvPlatform.setTextColor(platformColor);
 
-        h.tvCollection.setText(item.getCollectionName());
+        h.tvCollection.setText(item.getCollectionName() + " ▾");
         h.tvCollection.setOnClickListener(v -> showMoveDialog(item));
-        CharSequence relativeTime = DateUtils.getRelativeTimeSpanString(
-                item.getSavedAt(),
-                System.currentTimeMillis(),
-                DateUtils.MINUTE_IN_MILLIS,
-                DateUtils.FORMAT_ABBREV_RELATIVE
-        );
-        h.tvDate.setText(relativeTime);
+
+        h.tvDate.setText(TimeUtils.formatRelativeTime(item.getSavedAt()));
 
         h.tvTitle.setText(item.getDisplayTitle());
-        h.tvUrl.setText(item.getCanonicalUrl());
+
+        String domainPreview = item.getDomainPreview();
+        h.tvUrl.setText(domainPreview != null && !domainPreview.isEmpty() ? domainPreview : item.getCanonicalUrl());
 
         if (item.getCaption() != null && !item.getCaption().trim().isEmpty()) {
             h.tvCaption.setVisibility(View.VISIBLE);
@@ -102,12 +102,9 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ViewHold
 
         h.btnOpen.setOnClickListener(v -> openUrl(item.getUrl()));
 
-        h.btnShare.setOnClickListener(v -> {
-            Intent send = new Intent(Intent.ACTION_SEND);
-            send.setType("text/plain");
-            send.putExtra(Intent.EXTRA_TEXT, item.getUrl());
-            context.startActivity(Intent.createChooser(send, "Share Link"));
-        });
+        if (h.btnOrganize != null) {
+            h.btnOrganize.setOnClickListener(v -> showMoveDialog(item));
+        }
 
         h.btnMore.setOnClickListener(v -> showPopupMenu(v, item));
 
@@ -124,15 +121,22 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ViewHold
     }
 
     private void showPopupMenu(View anchor, ContentItem item) {
-        PopupMenu popup = new PopupMenu(context, anchor);
+        ContextThemeWrapper wrapper = new ContextThemeWrapper(context, R.style.ThemeOverlay_Hifadhio_Popup);
+        PopupMenu popup = new PopupMenu(wrapper, anchor, Gravity.END);
         popup.inflate(R.menu.card_item_menu);
+
+        MenuItem deleteItem = popup.getMenu().findItem(R.id.action_delete);
+        if (deleteItem != null) {
+            SpannableString span = new SpannableString(deleteItem.getTitle());
+            int dangerColor = ContextCompat.getColor(context, R.color.danger);
+            span.setSpan(new ForegroundColorSpan(dangerColor), 0, span.length(), 0);
+            deleteItem.setTitle(span);
+        }
+
         popup.setOnMenuItemClickListener(menuItem -> {
             int id = menuItem.getItemId();
             if (id == R.id.action_view_detail) {
                 if (listener != null) listener.onViewDetail(item);
-                return true;
-            } else if (id == R.id.action_open) {
-                openUrl(item.getUrl());
                 return true;
             } else if (id == R.id.action_share) {
                 Intent send = new Intent(Intent.ACTION_SEND);
@@ -238,7 +242,7 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ViewHold
     static class ViewHolder extends RecyclerView.ViewHolder {
         final TextView tvPlatform, tvCollection, tvDate, tvTitle, tvUrl, tvCaption, tvNotes;
         final View layoutNotes;
-        final MaterialButton btnOpen, btnShare;
+        final MaterialButton btnOpen, btnOrganize;
         final ImageView btnFav, btnMore;
 
         ViewHolder(View v) {
@@ -252,7 +256,7 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ViewHold
             tvNotes = v.findViewById(R.id.tv_card_notes);
             layoutNotes = v.findViewById(R.id.layout_card_notes);
             btnOpen = v.findViewById(R.id.btn_card_open);
-            btnShare = v.findViewById(R.id.btn_card_share);
+            btnOrganize = v.findViewById(R.id.btn_card_organize);
             btnFav = v.findViewById(R.id.btn_card_fav);
             btnMore = v.findViewById(R.id.btn_card_more);
         }

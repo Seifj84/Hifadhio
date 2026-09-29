@@ -46,11 +46,12 @@
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="96dp"
         android:text="Save Link"
+        android:contentDescription="Save Link"
         android:textColor="@color/primary_navy"
         app:icon="@drawable/ic_add"
         app:iconTint="@color/primary_navy"
         app:backgroundTint="@color/mint"
-        app:elevation="6dp" />
+        app:elevation="4dp" />
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_nav"
