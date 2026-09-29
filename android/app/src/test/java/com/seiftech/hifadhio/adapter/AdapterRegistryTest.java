@@ -19,10 +19,22 @@ public class AdapterRegistryTest {
     }
 
     @Test
-    public void testDefaultRegistryContainsGenericWebAdapter() {
+    public void testDefaultRegistryContainsFacebookAndGenericWebAdapters() {
         List<ContentExtractorAdapter> adapters = registry.getRegisteredAdapters();
-        assertEquals(1, adapters.size());
-        assertEquals(GenericWebAdapter.PLATFORM_ID, adapters.get(0).getPlatformId());
+        assertEquals(2, adapters.size());
+        assertEquals("Facebook", adapters.get(0).getPlatformId());
+        assertEquals(GenericWebAdapter.PLATFORM_ID, adapters.get(1).getPlatformId());
+    }
+
+    @Test
+    public void testRoutingFacebookUrlsToFacebookAdapter() {
+        ContentExtractorAdapter adapter1 = registry.getAdapterForUrl("https://facebook.com/share/r/1Qbbym5DGx");
+        assertNotNull(adapter1);
+        assertEquals("Facebook", adapter1.getPlatformId());
+
+        ContentExtractorAdapter adapter2 = registry.getAdapterForUrl("https://fb.watch/xyz123/");
+        assertNotNull(adapter2);
+        assertEquals("Facebook", adapter2.getPlatformId());
     }
 
     @Test
@@ -43,7 +55,7 @@ public class AdapterRegistryTest {
 
             @Override
             public int getPriority() {
-                return 100; // Higher than GenericWeb (0)
+                return 100; // Higher than Facebook (80) and GenericWeb (0)
             }
 
             @Override
@@ -75,13 +87,18 @@ public class AdapterRegistryTest {
 
         // Verify it was added and priority ordering places it first
         List<ContentExtractorAdapter> registered = registry.getRegisteredAdapters();
-        assertEquals(2, registered.size());
+        assertEquals(3, registered.size());
         assertEquals("YouTube", registered.get(0).getPlatformId());
-        assertEquals(GenericWebAdapter.PLATFORM_ID, registered.get(1).getPlatformId());
+        assertEquals("Facebook", registered.get(1).getPlatformId());
+        assertEquals(GenericWebAdapter.PLATFORM_ID, registered.get(2).getPlatformId());
 
         // YouTube URLs should route to mock adapter
         ContentExtractorAdapter resolved = registry.getAdapterForUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
         assertEquals("YouTube", resolved.getPlatformId());
+
+        // Facebook URLs should route to Facebook adapter
+        ContentExtractorAdapter fbResolved = registry.getAdapterForUrl("https://facebook.com/share/r/12345");
+        assertEquals("Facebook", fbResolved.getPlatformId());
 
         // Generic URLs still route to GenericWebAdapter
         ContentExtractorAdapter genericResolved = registry.getAdapterForUrl("https://techcrunch.com/article");

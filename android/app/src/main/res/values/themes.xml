@@ -24,10 +24,49 @@
         <item name="android:textColorPrimary">@color/text_primary</item>
         <item name="android:textColorSecondary">@color/text_secondary</item>
 
+        <!-- Dialog Styling (Prevent dark surface in light mode) -->
+        <item name="alertDialogTheme">@style/ThemeOverlay.Hifadhio.Dialog</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.Hifadhio.Dialog</item>
+
         <!-- Popup Menu Styling -->
         <item name="popupMenuStyle">@style/Widget.Hifadhio.PopupMenu</item>
         <item name="android:popupMenuStyle">@style/Widget.Hifadhio.PopupMenu</item>
         <item name="popupTheme">@style/ThemeOverlay.Hifadhio.Popup</item>
+    </style>
+
+    <!-- High-Contrast Readable Material Alert Dialog Theme -->
+    <style name="ThemeOverlay.Hifadhio.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="android:colorBackground">@color/surface</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/TextAppearance.Hifadhio.DialogTitle</item>
+        <item name="materialAlertDialogBodyTextStyle">@style/TextAppearance.Hifadhio.DialogBody</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.Hifadhio.DialogButton.Positive</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.Hifadhio.DialogButton.Negative</item>
+    </style>
+
+    <style name="TextAppearance.Hifadhio.DialogTitle" parent="MaterialAlertDialog.Material3.Title.Text">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.Hifadhio.DialogBody" parent="MaterialAlertDialog.Material3.Body.Text">
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:lineSpacingExtra">2dp</item>
+    </style>
+
+    <style name="Widget.Hifadhio.DialogButton.Positive" parent="Widget.Material3.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/primary_navy</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="Widget.Hifadhio.DialogButton.Negative" parent="Widget.Material3.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/text_secondary</item>
     </style>
 
     <!-- High-Contrast Readable Popup Menu -->

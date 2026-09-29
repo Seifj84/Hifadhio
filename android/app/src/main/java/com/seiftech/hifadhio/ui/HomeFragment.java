@@ -12,6 +12,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -145,10 +147,10 @@ public class HomeFragment extends Fragment implements ContentAdapter.OnItemActio
 
     @Override
     public void onDelete(ContentItem item) {
-        new AlertDialog.Builder(requireContext())
+        androidx.appcompat.app.AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_Hifadhio_Dialog)
                 .setTitle("Delete Content Item?")
-                .setMessage("Are you sure you want to remove this saved item from Hifadhio?")
-                .setPositiveButton("Delete", (dialog, which) -> {
+                .setMessage("Are you sure you want to remove this saved item from Hifadhio? This cannot be undone.")
+                .setPositiveButton("Delete", (d, which) -> {
                     db.delete(item.getId());
                     refresh();
                     if (getActivity() instanceof MainActivity) {
@@ -156,7 +158,14 @@ public class HomeFragment extends Fragment implements ContentAdapter.OnItemActio
                     }
                 })
                 .setNegativeButton("Cancel", null)
-                .show();
+                .create();
+        dialog.setOnShowListener(d -> {
+            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
+                    .setTextColor(ContextCompat.getColor(requireContext(), R.color.danger));
+            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE)
+                    .setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary));
+        });
+        dialog.show();
     }
 
     @Override

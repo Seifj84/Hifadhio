@@ -35,6 +35,7 @@ public class ContentAdapterRegistry {
     private void initDefaults() {
         defaultFallbackAdapter = new GenericWebAdapter();
         registerAdapter(defaultFallbackAdapter);
+        registerAdapter(new FacebookAdapter());
     }
 
     /**

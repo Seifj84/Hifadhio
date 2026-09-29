@@ -264,7 +264,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Processing Pipeline"
+                    android:text="Link Status"
                     android:textColor="@color/text_primary"
                     android:textSize="14sp"
                     android:textStyle="bold" />
@@ -278,7 +278,7 @@
                     android:paddingEnd="8dp"
                     android:paddingTop="3dp"
                     android:paddingBottom="3dp"
-                    android:text="READY"
+                    android:text="Ready"
                     android:textColor="@color/mint"
                     android:textSize="11sp"
                     android:textStyle="bold" />
@@ -289,7 +289,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Completed successfully"
+                android:text="Page details ready"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
 
@@ -303,7 +303,7 @@
                 android:insetBottom="0dp"
                 android:paddingStart="10dp"
                 android:paddingEnd="12dp"
-                android:text="Retry Processing"
+                android:text="Tap to retry"
                 android:textColor="@color/mint"
                 android:textSize="12sp"
                 app:icon="@drawable/ic_share"
@@ -312,22 +312,68 @@
                 app:strokeColor="@color/mint"
                 android:visibility="gone" />
 
-            <!-- Timeline Events -->
-            <TextView
+            <!-- User-facing simple progress steps -->
+            <LinearLayout
+                android:id="@+id/layout_detail_user_steps"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:text="Audit Timeline"
+                android:orientation="vertical" />
+
+            <!-- Collapsible Technical Details / Developer Diagnostics -->
+            <TextView
+                android:id="@+id/btn_toggle_tech_details"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:text="▸ Developer Diagnostics"
                 android:textColor="@color/text_secondary"
                 android:textSize="11sp"
                 android:textStyle="bold" />
 
             <LinearLayout
-                android:id="@+id/layout_detail_events_list"
+                android:id="@+id/layout_technical_details"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:orientation="vertical" />
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tv_tech_worker_info"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Worker: None"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/tv_tech_error_info"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="@color/danger"
+                    android:textSize="11sp"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="Raw Audit Log:"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/layout_detail_events_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:orientation="vertical" />
+            </LinearLayout>
         </LinearLayout>
 
         <!-- Divider -->

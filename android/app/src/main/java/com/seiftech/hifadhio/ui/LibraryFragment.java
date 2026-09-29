@@ -13,6 +13,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -239,7 +240,7 @@ public class LibraryFragment extends Fragment implements ContentAdapter.OnItemAc
         input.setLayoutParams(params);
         container.addView(input);
 
-        new AlertDialog.Builder(requireContext())
+        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_Hifadhio_Dialog)
                 .setTitle("Create New Collection")
                 .setMessage("Group saved items by topic or project:")
                 .setView(container)
@@ -296,7 +297,7 @@ public class LibraryFragment extends Fragment implements ContentAdapter.OnItemAc
         input.setLayoutParams(params);
         container.addView(input);
 
-        new AlertDialog.Builder(requireContext())
+        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_Hifadhio_Dialog)
                 .setTitle("Rename Collection")
                 .setView(container)
                 .setPositiveButton("Rename", (dialog, which) -> {
@@ -323,7 +324,7 @@ public class LibraryFragment extends Fragment implements ContentAdapter.OnItemAc
                 ? "Collection '" + collectionName + "' contains " + count + " items. Do you want to move them back to your Inbox or delete them completely?"
                 : "Are you sure you want to delete collection '" + collectionName + "'?";
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext())
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_Hifadhio_Dialog)
                 .setTitle("Delete Collection?")
                 .setMessage(msg);
 
@@ -408,10 +409,10 @@ public class LibraryFragment extends Fragment implements ContentAdapter.OnItemAc
 
     @Override
     public void onDelete(ContentItem item) {
-        new AlertDialog.Builder(requireContext())
+        androidx.appcompat.app.AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_Hifadhio_Dialog)
                 .setTitle("Delete Content Item?")
-                .setMessage("Remove this item from the collection?")
-                .setPositiveButton("Delete", (dialog, which) -> {
+                .setMessage("Are you sure you want to remove this saved item from Hifadhio? This cannot be undone.")
+                .setPositiveButton("Delete", (d, which) -> {
                     db.delete(item.getId());
                     setupChips();
                     refresh();
@@ -420,7 +421,14 @@ public class LibraryFragment extends Fragment implements ContentAdapter.OnItemAc
                     }
                 })
                 .setNegativeButton("Cancel", null)
-                .show();
+                .create();
+        dialog.setOnShowListener(d -> {
+            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
+                    .setTextColor(ContextCompat.getColor(requireContext(), R.color.danger));
+            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE)
+                    .setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary));
+        });
+        dialog.show();
     }
 
     @Override

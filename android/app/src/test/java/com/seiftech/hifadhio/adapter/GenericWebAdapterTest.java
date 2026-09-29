@@ -115,4 +115,33 @@ public class GenericWebAdapterTest {
         String raw = "https://example.com/page?utm_source=fb&utm_medium=social&igshid=abcdef";
         assertEquals("https://example.com/page", adapter.canonicalize(raw));
     }
+
+    @Test
+    public void testUpgradeHttpToHttps() {
+        assertEquals("https://www.fao.org/home/en", GenericWebAdapter.upgradeHttpToHttps("http://www.fao.org/home/en"));
+        assertEquals("https://example.com", GenericWebAdapter.upgradeHttpToHttps("https://example.com"));
+        assertEquals("https://insecure.site/path?arg=1", GenericWebAdapter.upgradeHttpToHttps("http://insecure.site/path?arg=1"));
+        assertNull(GenericWebAdapter.upgradeHttpToHttps(null));
+    }
+
+    @Test
+    public void testExtractDomain() {
+        assertEquals("fao.org", GenericWebAdapter.extractDomain("https://www.fao.org/home/en"));
+        assertEquals("fao.org", GenericWebAdapter.extractDomain("http://fao.org"));
+        assertEquals("news.ycombinator.com", GenericWebAdapter.extractDomain("https://news.ycombinator.com/item?id=123"));
+        assertEquals("Web", GenericWebAdapter.extractDomain(null));
+    }
+
+    @Test
+    public void testFallbackMetadataOnClientError() {
+        String testUrl = "https://www.fao.org/home/en";
+        ExtractedMetadata fallback = adapter.createFallbackMetadata(testUrl, "Cleartext HTTP traffic not permitted");
+
+        assertNotNull(fallback);
+        assertEquals("fao.org Page", fallback.getTitle());
+        assertEquals("fao.org Page", fallback.getOriginalTitle());
+        assertEquals(testUrl, fallback.getCanonicalUrl());
+        assertEquals("Web", fallback.getPlatform());
+        assertTrue(fallback.getDescription().contains("Saved from fao.org"));
+    }
 }

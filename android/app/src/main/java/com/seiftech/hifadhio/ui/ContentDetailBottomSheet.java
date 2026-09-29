@@ -31,6 +31,7 @@ import com.seiftech.hifadhio.data.ProcessingEvent;
 import com.seiftech.hifadhio.data.ProcessingJob;
 import com.seiftech.hifadhio.data.ProcessingJobManager;
 import com.seiftech.hifadhio.data.TimeUtils;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import android.widget.LinearLayout;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,12 +51,14 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
 
     private TextView tvPlatform, tvDate, tvTitle, tvOriginalTitle, tvCaption, tvStatus, tvUrl, tvNotes;
     private TextView tvJobStatus, tvJobMessage;
+    private TextView btnToggleTechDetails, tvTechWorkerInfo, tvTechErrorInfo;
     private ImageView btnFav, btnClose, btnCopyUrl;
     private Chip chipCollection;
     private ChipGroup chipGroupTags;
     private MaterialButton btnOpen, btnShare, btnEditAll, btnDelete, btnRetryJob;
     private TextView btnEditNote, btnAddTag;
-    private LinearLayout layoutEventsList;
+    private LinearLayout layoutEventsList, layoutTechDetails, layoutUserSteps;
+    private boolean isTechDetailsExpanded = false;
 
     public static ContentDetailBottomSheet newInstance(ContentItem item) {
         ContentDetailBottomSheet sheet = new ContentDetailBottomSheet();
@@ -115,6 +118,19 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
         tvJobMessage = view.findViewById(R.id.tv_detail_job_message);
         btnRetryJob = view.findViewById(R.id.btn_detail_retry_job);
         layoutEventsList = view.findViewById(R.id.layout_detail_events_list);
+        layoutTechDetails = view.findViewById(R.id.layout_technical_details);
+        layoutUserSteps = view.findViewById(R.id.layout_detail_user_steps);
+        btnToggleTechDetails = view.findViewById(R.id.btn_toggle_tech_details);
+        tvTechWorkerInfo = view.findViewById(R.id.tv_tech_worker_info);
+        tvTechErrorInfo = view.findViewById(R.id.tv_tech_error_info);
+
+        if (btnToggleTechDetails != null && layoutTechDetails != null) {
+            btnToggleTechDetails.setOnClickListener(v -> {
+                isTechDetailsExpanded = !isTechDetailsExpanded;
+                layoutTechDetails.setVisibility(isTechDetailsExpanded ? View.VISIBLE : View.GONE);
+                btnToggleTechDetails.setText(isTechDetailsExpanded ? "▾ Hide Developer Diagnostics" : "▸ Developer Diagnostics");
+            });
+        }
 
         populateViews();
 
@@ -168,17 +184,24 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
         });
 
         btnDelete.setOnClickListener(v -> {
-            new AlertDialog.Builder(requireContext())
+            androidx.appcompat.app.AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_Hifadhio_Dialog)
                     .setTitle("Delete Content Item?")
-                    .setMessage("Are you sure you want to remove this saved item from Hifadhio?")
-                    .setPositiveButton("Delete", (dialog, which) -> {
+                    .setMessage("Are you sure you want to remove this saved item from Hifadhio? This cannot be undone.")
+                    .setPositiveButton("Delete", (d, which) -> {
                         db.delete(item.getId());
                         Toast.makeText(requireContext(), "Item removed", Toast.LENGTH_SHORT).show();
                         if (listener != null) listener.onContentDeleted(item);
                         dismiss();
                     })
                     .setNegativeButton("Cancel", null)
-                    .show();
+                    .create();
+            dialog.setOnShowListener(d -> {
+                dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
+                        .setTextColor(ContextCompat.getColor(requireContext(), R.color.danger));
+                dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE)
+                        .setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary));
+            });
+            dialog.show();
         });
     }
 
@@ -231,25 +254,28 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
     }
 
     private void populateProcessingTimeline() {
-        if (tvJobStatus == null || tvJobMessage == null || layoutEventsList == null) return;
+        if (tvJobStatus == null || tvJobMessage == null) return;
         ProcessingJob job = db.getLatestJobForContentItem(item.getId());
+
         if (job == null) {
-            tvJobStatus.setText("READY");
+            tvJobStatus.setText("Ready");
             tvJobStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.mint));
-            tvJobMessage.setText("Saved and ready");
+            tvJobMessage.setText("Page details and summary ready");
             if (btnRetryJob != null) btnRetryJob.setVisibility(View.GONE);
         } else {
             String state = job.getState();
-            tvJobStatus.setText(state);
             if (ProcessingJob.STATE_COMPLETED.equalsIgnoreCase(state)) {
+                tvJobStatus.setText("Ready");
                 tvJobStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.mint));
-                tvJobMessage.setText(job.getStageMessage() != null && !job.getStageMessage().isEmpty() ? job.getStageMessage() : "Completed successfully");
+                tvJobMessage.setText("Page details extracted and ready");
                 if (btnRetryJob != null) btnRetryJob.setVisibility(View.GONE);
             } else if (ProcessingJob.STATE_FAILED.equalsIgnoreCase(state)) {
-                tvJobStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.danger));
-                tvJobMessage.setText(job.getSanitizedErrorMessage() != null && !job.getSanitizedErrorMessage().isEmpty() ? job.getSanitizedErrorMessage() : "Processing failed");
+                tvJobStatus.setText("Could not analyze this link");
+                tvJobStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary));
+                tvJobMessage.setText("We couldn't extract details from this link, but your link is saved safely and can be opened in your browser.");
                 if (btnRetryJob != null) {
                     btnRetryJob.setVisibility(View.VISIBLE);
+                    btnRetryJob.setText("Tap to retry");
                     btnRetryJob.setOnClickListener(v -> {
                         ProcessingJobManager.getInstance(requireContext()).retryJob(job.getId());
                         Toast.makeText(requireContext(), "Processing retry scheduled", Toast.LENGTH_SHORT).show();
@@ -257,42 +283,117 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
                         if (listener != null) listener.onContentUpdated(item);
                     });
                 }
-            } else {
+            } else if (ProcessingJob.STATE_RETRYING.equalsIgnoreCase(state)) {
+                tvJobStatus.setText("Retrying automatically");
+                tvJobStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.amber));
+                tvJobMessage.setText("Temporary connection issue. Retrying automatically in a few seconds...");
+                if (btnRetryJob != null) {
+                    btnRetryJob.setVisibility(View.VISIBLE);
+                    btnRetryJob.setText("Tap to retry now");
+                    btnRetryJob.setOnClickListener(v -> {
+                        ProcessingJobManager.getInstance(requireContext()).retryJob(job.getId());
+                        Toast.makeText(requireContext(), "Processing retry scheduled", Toast.LENGTH_SHORT).show();
+                        populateViews();
+                        if (listener != null) listener.onContentUpdated(item);
+                    });
+                }
+            } else if (ProcessingJob.STATE_QUEUED.equalsIgnoreCase(state)) {
+                tvJobStatus.setText("Preparing link");
                 tvJobStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.blue));
-                tvJobMessage.setText(job.getStageMessage() != null && !job.getStageMessage().isEmpty() ? job.getStageMessage() : "Processing in progress...");
+                tvJobMessage.setText("Scheduled for analysis...");
+                if (btnRetryJob != null) btnRetryJob.setVisibility(View.GONE);
+            } else { // CLAIMED or RUNNING
+                int progress = job.getProgress();
+                if (progress < 30) {
+                    tvJobStatus.setText("Preparing link");
+                    tvJobMessage.setText("Checking page format...");
+                } else if (progress < 70) {
+                    tvJobStatus.setText("Reading page details");
+                    tvJobMessage.setText("Fetching page content...");
+                } else {
+                    tvJobStatus.setText("Extracting details");
+                    tvJobMessage.setText("Saving page details & summary...");
+                }
+                tvJobStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.blue));
                 if (btnRetryJob != null) btnRetryJob.setVisibility(View.GONE);
             }
         }
 
-        layoutEventsList.removeAllViews();
-        List<ProcessingEvent> events = db.getEventsForContentItem(item.getId());
-        if (events.isEmpty()) {
-            TextView emptyTv = new TextView(requireContext());
-            emptyTv.setText("No audit events recorded.");
-            emptyTv.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary));
-            emptyTv.setTextSize(12f);
-            layoutEventsList.addView(emptyTv);
-        } else {
-            for (ProcessingEvent ev : events) {
-                LinearLayout row = new LinearLayout(requireContext());
-                row.setOrientation(LinearLayout.HORIZONTAL);
-                row.setPadding(0, 4, 0, 4);
+        // Render simple user progress steps
+        if (layoutUserSteps != null) {
+            layoutUserSteps.removeAllViews();
+            addUserStepRow(layoutUserSteps, "✓ Link saved securely", R.color.mint);
 
-                TextView tvTime = new TextView(requireContext());
-                tvTime.setText(TimeUtils.formatRelativeTime(ev.getCreatedAt()) + " • ");
-                tvTime.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary));
-                tvTime.setTextSize(11f);
-                row.addView(tvTime);
-
-                TextView tvMsg = new TextView(requireContext());
-                tvMsg.setText(ev.getMessage());
-                tvMsg.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary));
-                tvMsg.setTextSize(11f);
-                row.addView(tvMsg);
-
-                layoutEventsList.addView(row);
+            if (job == null || ProcessingJob.STATE_COMPLETED.equalsIgnoreCase(job.getState())) {
+                addUserStepRow(layoutUserSteps, "✓ Page details extracted", R.color.mint);
+                addUserStepRow(layoutUserSteps, "✓ Ready in Library", R.color.mint);
+            } else if (ProcessingJob.STATE_FAILED.equalsIgnoreCase(job.getState())) {
+                addUserStepRow(layoutUserSteps, "○ Could not analyze this link — original link preserved", R.color.text_secondary);
+                addUserStepRow(layoutUserSteps, "✓ Ready to open in browser", R.color.mint);
+            } else if (ProcessingJob.STATE_RETRYING.equalsIgnoreCase(job.getState())) {
+                addUserStepRow(layoutUserSteps, "⟳ Retrying automatically...", R.color.amber);
+            } else {
+                addUserStepRow(layoutUserSteps, "● Reading and extracting page details...", R.color.blue);
             }
         }
+
+        // Render technical developer diagnostics
+        if (tvTechWorkerInfo != null) {
+            if (job != null) {
+                tvTechWorkerInfo.setText("Job ID: #" + job.getId() + " • Worker: " + (job.getWorkerId() != null ? job.getWorkerId() : "none") + " • Attempt: " + job.getAttemptCount() + "/" + job.getMaxAttempts());
+            } else {
+                tvTechWorkerInfo.setText("Job ID: None • State: Initialized");
+            }
+        }
+        if (tvTechErrorInfo != null) {
+            if (job != null && job.getSanitizedErrorMessage() != null && !job.getSanitizedErrorMessage().isEmpty()) {
+                tvTechErrorInfo.setVisibility(View.VISIBLE);
+                tvTechErrorInfo.setText("Diagnostic: " + job.getSanitizedErrorMessage());
+            } else {
+                tvTechErrorInfo.setVisibility(View.GONE);
+            }
+        }
+
+        if (layoutEventsList != null) {
+            layoutEventsList.removeAllViews();
+            List<ProcessingEvent> events = db.getEventsForContentItem(item.getId());
+            if (events.isEmpty()) {
+                TextView emptyTv = new TextView(requireContext());
+                emptyTv.setText("No audit events recorded.");
+                emptyTv.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary));
+                emptyTv.setTextSize(11f);
+                layoutEventsList.addView(emptyTv);
+            } else {
+                for (ProcessingEvent ev : events) {
+                    LinearLayout row = new LinearLayout(requireContext());
+                    row.setOrientation(LinearLayout.HORIZONTAL);
+                    row.setPadding(0, 3, 0, 3);
+
+                    TextView tvTime = new TextView(requireContext());
+                    tvTime.setText(TimeUtils.formatRelativeTime(ev.getCreatedAt()) + " • ");
+                    tvTime.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary));
+                    tvTime.setTextSize(10f);
+                    row.addView(tvTime);
+
+                    TextView tvMsg = new TextView(requireContext());
+                    tvMsg.setText(ev.getMessage());
+                    tvMsg.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary));
+                    tvMsg.setTextSize(10f);
+                    row.addView(tvMsg);
+
+                    layoutEventsList.addView(row);
+                }
+            }
+        }
+    }
+
+    private void addUserStepRow(LinearLayout container, String text, int colorRes) {
+        TextView tv = new TextView(requireContext());
+        tv.setText(text);
+        tv.setTextColor(ContextCompat.getColor(requireContext(), colorRes));
+        tv.setTextSize(12f);
+        tv.setPadding(0, 3, 0, 3);
+        container.addView(tv);
     }
 
     private void populateTags() {
@@ -331,7 +432,7 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
         input.setLayoutParams(params);
         container.addView(input);
 
-        new AlertDialog.Builder(requireContext())
+        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_Hifadhio_Dialog)
                 .setTitle("Edit Note")
                 .setView(container)
                 .setPositiveButton("Save", (dialog, which) -> {
@@ -363,7 +464,7 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
         input.setLayoutParams(params);
         container.addView(input);
 
-        new AlertDialog.Builder(requireContext())
+        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_Hifadhio_Dialog)
                 .setTitle("Edit Tags")
                 .setMessage("Enter tags for easy search and filtering:")
                 .setView(container)
@@ -387,7 +488,7 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
         int currentSelection = rawCollections.indexOf(item.getCollectionName());
         if (currentSelection < 0) currentSelection = 0;
 
-        new AlertDialog.Builder(requireContext())
+        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_Hifadhio_Dialog)
                 .setTitle("Move to Collection")
                 .setSingleChoiceItems(options.toArray(new String[0]), currentSelection, (dialog, which) -> {
                     dialog.dismiss();
@@ -423,7 +524,7 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
         input.setLayoutParams(params);
         container.addView(input);
 
-        new AlertDialog.Builder(requireContext())
+        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_Hifadhio_Dialog)
                 .setTitle("New Collection")
                 .setMessage("Enter collection name:")
                 .setView(container)

@@ -19,6 +19,7 @@ import androidx.appcompat.view.ContextThemeWrapper;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.button.MaterialButton;
 import com.seiftech.hifadhio.R;
 import com.seiftech.hifadhio.data.ContentDb;
@@ -76,14 +77,18 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ViewHold
 
         if (h.tvStatus != null) {
             String status = item.getStatus();
-            if ("PROCESSING".equalsIgnoreCase(status) || "QUEUED".equalsIgnoreCase(status) || "RETRYING".equalsIgnoreCase(status)) {
+            if ("PROCESSING".equalsIgnoreCase(status) || "QUEUED".equalsIgnoreCase(status)) {
                 h.tvStatus.setVisibility(View.VISIBLE);
                 h.tvStatus.setText("Processing");
                 h.tvStatus.setTextColor(ContextCompat.getColor(context, R.color.blue));
+            } else if ("RETRYING".equalsIgnoreCase(status)) {
+                h.tvStatus.setVisibility(View.VISIBLE);
+                h.tvStatus.setText("Retrying");
+                h.tvStatus.setTextColor(ContextCompat.getColor(context, R.color.amber));
             } else if ("FAILED".equalsIgnoreCase(status)) {
                 h.tvStatus.setVisibility(View.VISIBLE);
-                h.tvStatus.setText("Failed");
-                h.tvStatus.setTextColor(ContextCompat.getColor(context, R.color.danger));
+                h.tvStatus.setText("Could not analyze");
+                h.tvStatus.setTextColor(ContextCompat.getColor(context, R.color.text_secondary));
             } else {
                 h.tvStatus.setVisibility(View.GONE);
             }
@@ -193,7 +198,7 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ViewHold
         int currentSelection = collections.indexOf(item.getCollectionName());
         if (currentSelection < 0) currentSelection = 0;
 
-        new AlertDialog.Builder(context)
+        new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_Hifadhio_Dialog)
                 .setTitle("Move to Collection")
                 .setSingleChoiceItems(options.toArray(new String[0]), currentSelection, (dialog, which) -> {
                     dialog.dismiss();
@@ -227,7 +232,7 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ViewHold
         input.setLayoutParams(params);
         container.addView(input);
 
-        new AlertDialog.Builder(context)
+        new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_Hifadhio_Dialog)
                 .setTitle("New Collection")
                 .setMessage("Enter collection name for this item:")
                 .setView(container)

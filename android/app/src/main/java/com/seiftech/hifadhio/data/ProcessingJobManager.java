@@ -3,16 +3,22 @@ package com.seiftech.hifadhio.data;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import com.seiftech.hifadhio.adapter.ContentAdapterRegistry;
 import com.seiftech.hifadhio.adapter.ContentExtractorAdapter;
 import com.seiftech.hifadhio.adapter.ExtractedMetadata;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class ProcessingJobManager {
+
+    private static final String TAG = "HifadhioPipeline";
 
     public interface JobListener {
         void onJobStateChanged(long jobId, long contentItemId, String state, String message);
@@ -24,6 +30,7 @@ public class ProcessingJobManager {
     private final ContentDb db;
     private final String workerId;
     private final ExecutorService executor;
+    private final ScheduledExecutorService retryScheduler;
     private final Handler mainHandler;
     private final List<JobListener> listeners = new ArrayList<>();
 
@@ -43,6 +50,7 @@ public class ProcessingJobManager {
         this.db = new ContentDb(context);
         this.workerId = "worker-" + UUID.randomUUID().toString().substring(0, 8);
         this.executor = Executors.newFixedThreadPool(2);
+        this.retryScheduler = Executors.newSingleThreadScheduledExecutor();
         this.mainHandler = new Handler(Looper.getMainLooper());
     }
 
@@ -78,25 +86,50 @@ public class ProcessingJobManager {
 
     public void triggerWorker() {
         executor.execute(() -> {
-            // 1. First recover any stale jobs whose lease expired
-            db.recoverStaleJobs();
-
-            // 2. Claim next available job (lease for 30 seconds)
-            long leaseDurationMs = 30_000L;
-            ProcessingJob job = db.claimNextJob(workerId, leaseDurationMs);
-            if (job == null) return;
-
-            notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_CLAIMED, "Job claimed");
-
             try {
-                processJob(job);
+                // 1. Recover stale jobs whose lease expired
+                db.recoverStaleJobs();
+
+                // 2. Drain all currently ready jobs in queue
+                while (true) {
+                    long leaseDurationMs = 30_000L;
+                    ProcessingJob job = db.claimNextJob(workerId, leaseDurationMs);
+                    if (job == null) {
+                        break; // Queue drained or remaining jobs scheduled for future
+                    }
+
+                    Log.i(TAG, String.format(Locale.US,
+                            "[Job #%d] ContentItem: #%d | Worker: %s | State: CLAIMED | Attempt: %d/%d",
+                            job.getId(), job.getContentItemId(), workerId, job.getAttemptCount(), job.getMaxAttempts()));
+                    notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_CLAIMED, "Job claimed");
+
+                    try {
+                        processJob(job);
+                    } catch (Exception e) {
+                        String sanitized = "Processing failed: " + (e.getMessage() != null ? e.getMessage() : "Unknown error");
+                        long retryDelayMs = calculateBackoffMs(job.getAttemptCount());
+                        db.failJob(job.getId(), "ERR_EXECUTION", sanitized, retryDelayMs);
+                        boolean canRetry = job.getAttemptCount() < job.getMaxAttempts();
+
+                        Log.w(TAG, String.format(Locale.US,
+                                "[Job #%d] Failure on attempt %d/%d: %s | CanRetry: %b | RetryDelay: %d ms",
+                                job.getId(), job.getAttemptCount(), job.getMaxAttempts(), sanitized, canRetry, retryDelayMs));
+
+                        notifyListeners(job.getId(), job.getContentItemId(),
+                                canRetry ? ProcessingJob.STATE_RETRYING : ProcessingJob.STATE_FAILED,
+                                sanitized);
+
+                        // Wake up the worker exactly when the scheduled backoff expires
+                        if (canRetry && retryDelayMs > 0) {
+                            Log.i(TAG, String.format(Locale.US,
+                                    "[Job #%d] Scheduled background retry in %d ms via ScheduledExecutorService",
+                                    job.getId(), retryDelayMs));
+                            retryScheduler.schedule(this::triggerWorker, retryDelayMs, TimeUnit.MILLISECONDS);
+                        }
+                    }
+                }
             } catch (Exception e) {
-                String sanitized = "Processing failed: " + (e.getMessage() != null ? e.getMessage() : "Unknown error");
-                long retryDelayMs = calculateBackoffMs(job.getAttemptCount());
-                db.failJob(job.getId(), "ERR_EXECUTION", sanitized, retryDelayMs);
-                notifyListeners(job.getId(), job.getContentItemId(),
-                        job.getAttemptCount() < job.getMaxAttempts() ? ProcessingJob.STATE_RETRYING : ProcessingJob.STATE_FAILED,
-                        sanitized);
+                Log.e(TAG, "Worker queue drain error", e);
             }
         });
     }
@@ -104,10 +137,15 @@ public class ProcessingJobManager {
     private void processJob(ProcessingJob job) throws Exception {
         ContentItem item = db.getById(job.getContentItemId());
         if (item == null) {
+            Log.w(TAG, String.format(Locale.US, "[Job #%d] ContentItem #%d no longer exists", job.getId(), job.getContentItemId()));
             db.failJob(job.getId(), "ERR_NOT_FOUND", "Associated content item no longer exists", 0);
             notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_FAILED, "Content item not found");
             return;
         }
+
+        Log.i(TAG, String.format(Locale.US,
+                "[Job #%d] Starting processing for URL: %s | Platform: %s",
+                job.getId(), item.getUrl(), item.getPlatform()));
 
         // Stage 1: Adapter Selection
         db.updateJobProgress(job.getId(), 15, "Identifying content adapter");
@@ -168,12 +206,17 @@ public class ProcessingJobManager {
 
         // Stage 4: Mark Complete
         db.completeJob(job.getId());
+        Log.i(TAG, String.format(Locale.US,
+                "[Job #%d] Terminal Outcome: COMPLETED successfully in %d ms | ContentItem #%d: '%s'",
+                job.getId(), (System.currentTimeMillis() - job.getStartedAt()), item.getId(), item.getTitle()));
         notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_COMPLETED, "Processing completed");
     }
 
     public void retryJob(long jobId) {
         ProcessingJob job = db.getJobById(jobId);
         if (job == null) return;
+
+        Log.i(TAG, String.format(Locale.US, "[Job #%d] User manually initiated retry. Resetting attempt counter.", jobId));
 
         // Reset attempt count, schedule immediately
         job.setState(ProcessingJob.STATE_QUEUED);

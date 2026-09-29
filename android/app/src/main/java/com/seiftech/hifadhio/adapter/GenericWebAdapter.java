@@ -69,11 +69,36 @@ public class GenericWebAdapter implements ContentExtractorAdapter {
             if (result.finalUrl != null && !result.finalUrl.isEmpty()) {
                 finalUrl = result.finalUrl;
             }
+            return extractFromHtml(html, finalUrl);
         } catch (Exception e) {
-            throw new ExtractionException("ERR_FETCH_FAILED", "Failed to fetch content from URL: " + e.getMessage(), e);
+            String msg = e.getMessage() != null ? e.getMessage() : "";
+            // Check for cleartext downgrade or permanent client/blocking errors (400, 401, 403, 404, too many redirects)
+            if (msg.contains("Cleartext HTTP traffic")
+                    || msg.contains("HTTP response error: 400")
+                    || msg.contains("HTTP response error: 401")
+                    || msg.contains("HTTP response error: 403")
+                    || msg.contains("HTTP response error: 404")
+                    || msg.contains("Too many redirects")) {
+                ExtractedMetadata fallback = new ExtractedMetadata();
+                fallback.setPlatform(detectPlatform(canonical));
+                fallback.setCanonicalUrl(canonical);
+                String domain = extractDomain(canonical);
+                fallback.setTitle(domain + " Page");
+                fallback.setOriginalTitle(domain + " Page");
+                if (msg.contains("Cleartext HTTP traffic")) {
+                    fallback.setDescription("Page saved securely (destination attempted cleartext HTTP redirect)");
+                } else if (msg.contains("403") || msg.contains("401") || msg.contains("400")) {
+                    fallback.setDescription("Page saved (content protected or requires browser session)");
+                } else if (msg.contains("404")) {
+                    fallback.setDescription("Link saved (page returned 404 Not Found)");
+                } else {
+                    fallback.setDescription("Link saved");
+                }
+                return fallback;
+            }
+            // For real network timeouts or connection drops, throw so retry engine can retry!
+            throw new ExtractionException("ERR_FETCH_FAILED", "Failed to fetch content from URL: " + msg, e);
         }
-
-        return extractFromHtml(html, finalUrl);
     }
 
     /**
@@ -328,8 +353,16 @@ public class GenericWebAdapter implements ContentExtractorAdapter {
         }
     }
 
+    public static String upgradeHttpToHttps(String url) {
+        if (url == null) return null;
+        if (url.startsWith("http://")) {
+            return "https://" + url.substring(7);
+        }
+        return url;
+    }
+
     private HttpResult fetchHtml(String targetUrl) throws Exception {
-        String currentUrl = targetUrl;
+        String currentUrl = upgradeHttpToHttps(targetUrl);
         int redirects = 0;
 
         while (redirects < 5) {
@@ -350,7 +383,10 @@ public class GenericWebAdapter implements ContentExtractorAdapter {
                     || status == 307 || status == 308) {
                 String location = conn.getHeaderField("Location");
                 if (location != null && !location.isEmpty()) {
-                    currentUrl = resolveUrl(currentUrl, location);
+                    String resolved = resolveUrl(currentUrl, location);
+                    // Prevent insecure redirect downgrade to cleartext HTTP (e.g. FAO redirecting to http://)
+                    resolved = upgradeHttpToHttps(resolved);
+                    currentUrl = resolved;
                     redirects++;
                     conn.disconnect();
                     continue;
@@ -377,5 +413,18 @@ public class GenericWebAdapter implements ContentExtractorAdapter {
             }
         }
         throw new Exception("Too many redirects: " + targetUrl);
+    }
+
+    public static String extractDomain(String url) {
+        if (url == null) return "Web";
+        try {
+            URI uri = new URI(url);
+            String host = uri.getHost();
+            if (host != null) {
+                if (host.startsWith("www.")) host = host.substring(4);
+                return host;
+            }
+        } catch (Exception ignored) {}
+        return "Web";
     }
 }
