@@ -1,68 +1,60 @@
 # Current Phase
 
-Phase: Phase 03
-Name: Collections, Tags and Library
-Status: COMPLETED
-Started: 2026-09-28T22:15:00+03:00
-Completed: 2026-09-29T04:18:00+03:00
-Target specification section: Sections 1075-1090 of Master Spec & UI/UX Brand System
+Phase: Phase 04
+Name: Processing Job Framework
+Status: IN_PROGRESS
+Started: 2026-09-29T05:16:00+03:00
+Target specification section: Sections 629-662 & 1091-1108 of Master Spec
 
 ## Objective
-Implement comprehensive personal knowledge organization: full Collection CRUD with item counts, manual tag indexing and filtering, favorites filtering, a dedicated Content Detail screen, and title override retention (`original_title` vs user `title`). Also apply responsive top window insets so headers never overlap the system status bar, clock, or camera cutout.
+Establish an asynchronous, reliable processing job framework with SQLite persistence (database schema v3), worker claim/lease concurrency control, exponential backoff retries, idempotency key guarantees, stale job recovery, append-only processing event timeline, UI status indicators on content items, and retry actions on failed jobs.
 
 ## In scope
-- [x] Responsive layout fix: Insets listener on AppBarLayout to prevent status bar/clock/notch overlap.
-- [x] Database upgrade (v2): Add `original_title` column and `collections` table to `ContentDb`.
-- [x] Collection CRUD: Create new collection, rename collection, and delete collection (with item reassignment to Inbox).
-- [x] Collection stats: Query collection item counts and display in Library.
-- [x] Favorites filter view: Instant filter for starred items.
-- [x] Tag indexing & filtering: Query all distinct tags, filter Library by tag, and add/edit tags.
-- [x] Content Detail Sheet: Clean, dedicated view of saved items with full notes, tags, metadata, and quick actions.
-- [x] Title override: Allow user title customization while preserving extracted `original_title`.
-- [x] Version bump to `0.3.0-phase3` in `build.gradle` and CI/CD workflow.
+- [ ] Database upgrade (v3): Create `processing_jobs` and `processing_events` tables in `ContentDb`.
+- [ ] ProcessingJob and ProcessingEvent domain models.
+- [ ] Worker claim/lease mechanism with lease expiration & heartbeats.
+- [ ] Retry with exponential backoff and max attempt limits.
+- [ ] Idempotency keys (`job_type:content_item_id`) preventing duplicate jobs.
+- [ ] Stale-job recovery for interrupted or abandoned worker leases.
+- [ ] ProcessingJobManager background executor orchestrating jobs and updating content item status.
+- [ ] UI visual status indicators on cards and processing event timeline with "Retry" action in Content Detail sheet.
+- [ ] Comprehensive unit test suite (`ProcessingJobTest.java`) covering lease, retry, idempotency, recovery, and cancellation.
+- [ ] Version bump to `0.4.0-phase4` in `build.gradle` and CI/CD workflow.
+- [ ] Verified APK build published to GitHub Releases.
 
 ## Out of scope
-- Background scraper workers, video downloading, Whisper transcription, Frame OCR (scheduled for Phase 04+).
+- Live scraping of third-party platforms (scheduled for Phase 05/06 adapters).
+- Whisper / audio transcription and OCR (scheduled for Phase 07+).
 
 ## Preconditions
-- Phase 02 completed, tested, and verified on physical device.
+- Phase 03 completed, tested, and verified on physical device.
 - Clean GitHub repository state at `Seifj84/Hifadhio` on `main`.
 
 ## Work units
-- [x] WU-01 Fix header status bar insets & responsiveness in activity_main.xml, themes.xml, MainActivity.java
-- [x] WU-02 Upgrade ContentDb to schema v2 with original_title and collections CRUD
-- [x] WU-03 Implement ContentDetailBottomSheet for full item inspection & tag editing
-- [x] WU-04 Implement Collection management dialogs (Create, Rename, Delete) in LibraryFragment
-- [x] WU-05 Enhance LibraryFragment with Favorites filter, Collections chips with counts, and Tag filter
-- [x] WU-06 Connect ContentAdapter to open ContentDetailBottomSheet on card tap
-- [x] WU-07 Add unit tests for Collection & Tag operations
-- [x] WU-08 Bump version to 0.3.0-phase3 and update CI/CD workflow
-- [x] WU-09 Compile, test, and release v0.3.0-phase3 APK
+- [ ] WU-01 Project state documentation initialization
+- [ ] WU-02 ProcessingJob & ProcessingEvent data models
+- [ ] WU-03 Database schema upgrade v3 & job/event CRUD operations in ContentDb
+- [ ] WU-04 ProcessingJobManager with background execution & worker leasing
+- [ ] WU-05 UI integration in ContentAdapter, item cards, and ContentDetailBottomSheet
+- [ ] WU-06 Unit test suite ProcessingJobTest
+- [ ] WU-07 Version bump to 0.4.0-phase4 and CI/CD automated build
+- [ ] WU-08 APK verification and release publishing
 
 ## Required tests
-- [x] Header does not overlap status bar clock/notch: VERIFIED
-- [x] Collection CRUD (create, rename, delete items move to Inbox): PASS
-- [x] Tag filtering & favorites filtering: PASS
-- [x] Content detail view displays full metadata and allows editing: PASS
-- [x] Title override preserves original_title: PASS
-- [x] CI/CD automated build passes: PASS
+- [ ] Worker lease claim & concurrency: PASS
+- [ ] Exponential backoff & retry progression: PASS
+- [ ] Idempotency key duplicate prevention: PASS
+- [ ] Stale job recovery from expired leases: PASS
+- [ ] Job cancellation: PASS
+- [ ] Processing events timeline recording: PASS
+- [ ] Automated CI/CD build: PASS
 
 ## Phase acceptance criteria
-1. App header has comfortable breathing room below the status bar clock on any screen.
-2. Users can create, rename, and delete collections directly in the app.
-3. Library provides responsive filtering by Collection (with counts), Favorites, and Tags.
-4. Tapping a card opens a rich Content Detail view.
-5. All tests pass, and an installable test APK v0.3.0-phase3 is built and published.
+1. `processing_jobs` and `processing_events` tables created with full indexing.
+2. A test job can fail, retry with exponential backoff, recover from worker interruption, and complete without duplication.
+3. Content items reflect live processing states (`SAVED`, `PROCESSING`, `READY`, `FAILED`).
+4. Content Detail view provides an audit timeline of processing events and retry action for failed jobs.
+5. All unit tests pass in CI/CD, and an installable test APK v0.4.0-phase4 is published.
 
 ## Blockers
 None.
-
-## Completion evidence
-- GitHub Actions CI/CD Build Run #36506993583 succeeded.
-- GitHub Release `v0.3.0-phase3` published.
-- Unit test suite `CollectionsAndTagsTest` and `UrlNormalizerTest` executed and passed in CI.
-
-## APK status
-AVAILABLE
-- Direct Download: https://github.com/Seifj84/Hifadhio/releases/download/v0.3.0-phase3/Hifadhio-v0.3.0-phase3-debug.apk
-- Release Page: https://github.com/Seifj84/Hifadhio/releases/tag/v0.3.0-phase3

@@ -27,6 +27,11 @@ import com.seiftech.hifadhio.R;
 import com.seiftech.hifadhio.data.ContentDb;
 import com.seiftech.hifadhio.data.ContentItem;
 import com.seiftech.hifadhio.data.PlatformDetector;
+import com.seiftech.hifadhio.data.ProcessingEvent;
+import com.seiftech.hifadhio.data.ProcessingJob;
+import com.seiftech.hifadhio.data.ProcessingJobManager;
+import com.seiftech.hifadhio.data.TimeUtils;
+import android.widget.LinearLayout;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,11 +49,13 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
     private OnContentActionListener listener;
 
     private TextView tvPlatform, tvDate, tvTitle, tvOriginalTitle, tvStatus, tvUrl, tvNotes;
+    private TextView tvJobStatus, tvJobMessage;
     private ImageView btnFav, btnClose, btnCopyUrl;
     private Chip chipCollection;
     private ChipGroup chipGroupTags;
-    private MaterialButton btnOpen, btnShare, btnEditAll, btnDelete;
+    private MaterialButton btnOpen, btnShare, btnEditAll, btnDelete, btnRetryJob;
     private TextView btnEditNote, btnAddTag;
+    private LinearLayout layoutEventsList;
 
     public static ContentDetailBottomSheet newInstance(ContentItem item) {
         ContentDetailBottomSheet sheet = new ContentDetailBottomSheet();
@@ -103,6 +110,10 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
         btnShare = view.findViewById(R.id.btn_detail_share);
         btnEditAll = view.findViewById(R.id.btn_detail_edit_all);
         btnDelete = view.findViewById(R.id.btn_detail_delete);
+        tvJobStatus = view.findViewById(R.id.tv_detail_job_status);
+        tvJobMessage = view.findViewById(R.id.tv_detail_job_message);
+        btnRetryJob = view.findViewById(R.id.btn_detail_retry_job);
+        layoutEventsList = view.findViewById(R.id.layout_detail_events_list);
 
         populateViews();
 
@@ -208,6 +219,72 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
         }
 
         populateTags();
+        populateProcessingTimeline();
+    }
+
+    private void populateProcessingTimeline() {
+        if (tvJobStatus == null || tvJobMessage == null || layoutEventsList == null) return;
+        ProcessingJob job = db.getLatestJobForContentItem(item.getId());
+        if (job == null) {
+            tvJobStatus.setText("READY");
+            tvJobStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.mint));
+            tvJobMessage.setText("Saved and ready");
+            if (btnRetryJob != null) btnRetryJob.setVisibility(View.GONE);
+        } else {
+            String state = job.getState();
+            tvJobStatus.setText(state);
+            if (ProcessingJob.STATE_COMPLETED.equalsIgnoreCase(state)) {
+                tvJobStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.mint));
+                tvJobMessage.setText(job.getStageMessage() != null && !job.getStageMessage().isEmpty() ? job.getStageMessage() : "Completed successfully");
+                if (btnRetryJob != null) btnRetryJob.setVisibility(View.GONE);
+            } else if (ProcessingJob.STATE_FAILED.equalsIgnoreCase(state)) {
+                tvJobStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.danger));
+                tvJobMessage.setText(job.getSanitizedErrorMessage() != null && !job.getSanitizedErrorMessage().isEmpty() ? job.getSanitizedErrorMessage() : "Processing failed");
+                if (btnRetryJob != null) {
+                    btnRetryJob.setVisibility(View.VISIBLE);
+                    btnRetryJob.setOnClickListener(v -> {
+                        ProcessingJobManager.getInstance(requireContext()).retryJob(job.getId());
+                        Toast.makeText(requireContext(), "Processing retry scheduled", Toast.LENGTH_SHORT).show();
+                        populateViews();
+                        if (listener != null) listener.onContentUpdated(item);
+                    });
+                }
+            } else {
+                tvJobStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.blue));
+                tvJobMessage.setText(job.getStageMessage() != null && !job.getStageMessage().isEmpty() ? job.getStageMessage() : "Processing in progress...");
+                if (btnRetryJob != null) btnRetryJob.setVisibility(View.GONE);
+            }
+        }
+
+        layoutEventsList.removeAllViews();
+        List<ProcessingEvent> events = db.getEventsForContentItem(item.getId());
+        if (events.isEmpty()) {
+            TextView emptyTv = new TextView(requireContext());
+            emptyTv.setText("No audit events recorded.");
+            emptyTv.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary));
+            emptyTv.setTextSize(12f);
+            layoutEventsList.addView(emptyTv);
+        } else {
+            for (ProcessingEvent ev : events) {
+                LinearLayout row = new LinearLayout(requireContext());
+                row.setOrientation(LinearLayout.HORIZONTAL);
+                row.setPadding(0, 4, 0, 4);
+
+                TextView tvTime = new TextView(requireContext());
+                tvTime.setText(TimeUtils.formatRelativeTime(ev.getCreatedAt()) + " • ");
+                tvTime.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary));
+                tvTime.setTextSize(11f);
+                row.addView(tvTime);
+
+                TextView tvMsg = new TextView(requireContext());
+                tvMsg.setText(ev.getMessage());
+                tvMsg.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary));
+                tvMsg.setTextSize(11f);
+                row.addView(tvMsg);
+
+                layoutEventsList.addView(row);
+            }
+        }
     }
 
     private void populateTags() {

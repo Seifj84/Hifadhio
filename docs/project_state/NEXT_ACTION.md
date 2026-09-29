@@ -1,9 +1,10 @@
 # Next Action
 
-1. Install `Hifadhio-v0.1.0-phase1-debug.apk` on a physical Android device or emulator.
-2. Complete acceptance checklist in `release_records/phase_01_capture_mvp/v0.1.0/APK_VERIFICATION.md`:
-   - Verify native Share from Instagram, TikTok, YouTube, and browser.
-   - Verify URL normalization and parameter stripping.
-   - Verify local persistence across restarts.
-   - Verify live search and collection filtering.
-3. Review feedback and proceed to Phase 02 planning.
+Phase: Phase 04 - Processing Job Framework
+
+1. Implement `ProcessingJob.java` and `ProcessingEvent.java` domain models.
+2. Upgrade `ContentDb.java` to schema version 3 with `processing_jobs` and `processing_events` tables and indexes.
+3. Implement `ProcessingJobManager.java` with worker lease/claim, exponential backoff retry, stale recovery, and event logging.
+4. Integrate processing status indicators in `ContentAdapter` and the event audit timeline + retry action in `ContentDetailBottomSheet`.
+5. Write unit tests in `ProcessingJobTest.java`.
+6. Bump version to `0.4.0-phase4`, push to GitHub, and build release APK.

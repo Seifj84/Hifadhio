@@ -74,6 +74,21 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ViewHold
 
         h.tvDate.setText(TimeUtils.formatRelativeTime(item.getSavedAt()));
 
+        if (h.tvStatus != null) {
+            String status = item.getStatus();
+            if ("PROCESSING".equalsIgnoreCase(status) || "QUEUED".equalsIgnoreCase(status) || "RETRYING".equalsIgnoreCase(status)) {
+                h.tvStatus.setVisibility(View.VISIBLE);
+                h.tvStatus.setText("Processing");
+                h.tvStatus.setTextColor(ContextCompat.getColor(context, R.color.blue));
+            } else if ("FAILED".equalsIgnoreCase(status)) {
+                h.tvStatus.setVisibility(View.VISIBLE);
+                h.tvStatus.setText("Failed");
+                h.tvStatus.setTextColor(ContextCompat.getColor(context, R.color.danger));
+            } else {
+                h.tvStatus.setVisibility(View.GONE);
+            }
+        }
+
         h.tvTitle.setText(item.getDisplayTitle());
 
         String domainPreview = item.getDomainPreview();
@@ -240,7 +255,7 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ViewHold
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
-        final TextView tvPlatform, tvCollection, tvDate, tvTitle, tvUrl, tvCaption, tvNotes;
+        final TextView tvPlatform, tvCollection, tvStatus, tvDate, tvTitle, tvUrl, tvCaption, tvNotes;
         final View layoutNotes;
         final MaterialButton btnOpen, btnOrganize;
         final ImageView btnFav, btnMore;
@@ -249,6 +264,7 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ViewHold
             super(v);
             tvPlatform = v.findViewById(R.id.tv_card_platform);
             tvCollection = v.findViewById(R.id.tv_card_collection);
+            tvStatus = v.findViewById(R.id.tv_card_status);
             tvDate = v.findViewById(R.id.tv_card_date);
             tvTitle = v.findViewById(R.id.tv_card_title);
             tvUrl = v.findViewById(R.id.tv_card_url);

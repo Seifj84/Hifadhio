@@ -1,4 +1,4 @@
-name: Build Hifadhio Phase 3 APK
+name: Build Hifadhio Phase 4 APK
 
 on:
   push:
@@ -43,48 +43,48 @@ jobs:
 
       - name: Prepare Release Artifacts
         run: |
-          mkdir -p release_records/phase_03_collections_library/v0.3.0/
-          cp android/app/build/outputs/apk/debug/app-debug.apk release_records/phase_03_collections_library/v0.3.0/Hifadhio-v0.3.0-phase3-debug.apk
-          cd release_records/phase_03_collections_library/v0.3.0/
-          zip -9 Hifadhio-v0.3.0-phase3-debug.zip Hifadhio-v0.3.0-phase3-debug.apk
-          sha256sum Hifadhio-v0.3.0-phase3-debug.apk > SHA256SUMS.txt
-          sha256sum Hifadhio-v0.3.0-phase3-debug.zip >> SHA256SUMS.txt
+          mkdir -p release_records/phase_04_processing_framework/v0.4.0/
+          cp android/app/build/outputs/apk/debug/app-debug.apk release_records/phase_04_processing_framework/v0.4.0/Hifadhio-v0.4.0-phase4-debug.apk
+          cd release_records/phase_04_processing_framework/v0.4.0/
+          zip -9 Hifadhio-v0.4.0-phase4-debug.zip Hifadhio-v0.4.0-phase4-debug.apk
+          sha256sum Hifadhio-v0.4.0-phase4-debug.apk > SHA256SUMS.txt
+          sha256sum Hifadhio-v0.4.0-phase4-debug.zip >> SHA256SUMS.txt
           cat SHA256SUMS.txt
           cd ../../..
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Hifadhio-v0.3.0-phase3-debug
+          name: Hifadhio-v0.4.0-phase4-debug
           path: |
-            release_records/phase_03_collections_library/v0.3.0/Hifadhio-v0.3.0-phase3-debug.apk
-            release_records/phase_03_collections_library/v0.3.0/Hifadhio-v0.3.0-phase3-debug.zip
+            release_records/phase_04_processing_framework/v0.4.0/Hifadhio-v0.4.0-phase4-debug.apk
+            release_records/phase_04_processing_framework/v0.4.0/Hifadhio-v0.4.0-phase4-debug.zip
           if-no-files-found: error
 
       - name: Create GitHub Release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.3.0-phase3
-          name: "Hifadhio v0.3.0 (Phase 3 Collections, Tags and Library)"
+          tag_name: v0.4.0-phase4
+          name: "Hifadhio v0.4.0 (Phase 4 Processing Job Framework)"
           body: |
-            ## Hifadhio v0.3.0 — Phase 3 Collections, Tags and Library
+            ## Hifadhio v0.4.0 — Phase 4 Processing Job Framework
 
             > **Save once. Find it when it matters.**
             > A NAS Digital Solutions product - engineered by SeifTech.
 
-            ### What's New in Phase 3:
-            - **Responsive Header & Status Bar Padding**: Applied dynamic window insets listeners for status bar & camera cutouts to ensure the app header, title, and subtitle sit comfortably below the clock and icons on every screen.
-            - **Complete Collection CRUD**: Create new custom collections, rename collections, and delete collections (with safe reassignment of items back to Inbox).
-            - **Collections with Live Item Counts**: Real-time item badges on every collection chip in the Library.
-            - **Rich Content Detail Screen**: Tapping any card opens a dedicated bottom sheet displaying full metadata, original extracted title vs customized title, personal notes with fast inline editing, tag chips, and action shortcuts.
-            - **Favorites Filtering**: Filter Library instantly by starred items with a dedicated `★ Favorites` view.
-            - **Manual Tag Indexing & Filtering**: Full support for personal `#tags`, tag chips in Library, and tag editing.
-            - **Title Override Protection**: Custom title editing preserves the original extracted title (`original_title`).
-            - **Unit Tests**: Full test suite for URL normalization, duplicate matching, title override hierarchy, tag formatting, and collection validation.
+            ### What's New in Phase 4:
+            - **Asynchronous Processing Pipeline**: Decoupled link capture from background content extraction via SQLite database schema v3.
+            - **Processing Jobs (`processing_jobs`)**: Persisted job queue with state transitions (`QUEUED`, `CLAIMED`, `RUNNING`, `RETRYING`, `COMPLETED`, `FAILED`, `CANCELLED`).
+            - **Worker Claim & Lease Locking**: Atomic worker claims with configurable lease durations and heartbeat renewal preventing multi-worker race conditions.
+            - **Stale Job Recovery**: Interrupted, abandoned, or crashed worker jobs automatically recover back to `QUEUED` when leases expire.
+            - **Exponential Backoff & Retry**: Failed network or parsing jobs automatically retry with exponential backoff up to `max_attempts = 3`.
+            - **Idempotency Key Guarantees**: Prevents duplicate job execution for identical items.
+            - **Audit Events Timeline (`processing_events`)**: Append-only log tracking every stage transition and progress milestone.
+            - **UI Real-Time Status & Retry Action**: Content cards and Content Detail sheets display live processing indicators, progress status, and a one-tap "Retry Processing" button for failed jobs.
+            - **Comprehensive Test Suite**: Unit tests verifying worker lease, exponential backoff, idempotency, stale recovery, and cancellation.
           files: |
-            release_records/phase_03_collections_library/v0.3.0/Hifadhio-v0.3.0-phase3-debug.apk
-            release_records/phase_03_collections_library/v0.3.0/Hifadhio-v0.3.0-phase3-debug.zip
+            release_records/phase_04_processing_framework/v0.4.0/Hifadhio-v0.4.0-phase4-debug.apk
+            release_records/phase_04_processing_framework/v0.4.0/Hifadhio-v0.4.0-phase4-debug.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-

@@ -20,6 +20,8 @@ import com.seiftech.hifadhio.R;
 import com.seiftech.hifadhio.data.ContentDb;
 import com.seiftech.hifadhio.data.ContentItem;
 import com.seiftech.hifadhio.data.PlatformDetector;
+import com.seiftech.hifadhio.data.ProcessingJob;
+import com.seiftech.hifadhio.data.ProcessingJobManager;
 import com.seiftech.hifadhio.data.UrlNormalizer;
 
 public class SaveLinkBottomSheet extends BottomSheetDialogFragment {
@@ -185,8 +187,10 @@ public class SaveLinkBottomSheet extends BottomSheetDialogFragment {
                 item.setCollectionName(collection);
                 item.setTags(tags);
                 item.setStatus("SAVED");
-                db.insert(item);
+                long insertedId = db.insert(item);
+                item.setId(insertedId);
                 db.createCollection(collection);
+                ProcessingJobManager.getInstance(requireContext()).enqueueJob(insertedId, ProcessingJob.TYPE_METADATA_FETCH);
                 Toast.makeText(requireContext(), "Link captured to Hifadhio!", Toast.LENGTH_SHORT).show();
                 if (onSavedListener != null) onSavedListener.onSaved(item);
             }
