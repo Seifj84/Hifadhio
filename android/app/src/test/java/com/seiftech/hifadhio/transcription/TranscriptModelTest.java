@@ -72,8 +72,8 @@ public class TranscriptModelTest {
         assertEquals("Today we discuss artificial intelligence", matches.get(0).getText());
 
         List<TranscriptSegment> multiMatches = t.searchSegments("to");
-        // "Welcome to the podcast"
-        assertEquals(1, multiMatches.size());
+        // Matches "Welcome to the podcast" and "Today we discuss..."
+        assertEquals(2, multiMatches.size());
 
         List<TranscriptSegment> noMatches = t.searchSegments("blockchain");
         assertTrue(noMatches.isEmpty());
