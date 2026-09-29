@@ -1,11 +1,15 @@
 # Next Action
 
-Phase: Phase 05 - Adapter Framework + Generic Web Metadata
+Phase: Transitioning to Phase 06 - Official Platform Metadata Integrations
 
-1. Implement `ContentExtractorAdapter.java` interface, `ExtractedMetadata.java`, and `AdapterHealth.java` in package `com.seiftech.hifadhio.adapter`.
-2. Implement `ContentAdapterRegistry.java` with priority ordering, dynamic registration, and health monitoring.
-3. Implement `GenericWebAdapter.java` with OpenGraph & HTML metadata extraction, entity decoding, and relative URL resolution.
-4. Integrate `ContentAdapterRegistry` into `ProcessingJobManager.java` for real metadata extraction and database updates.
-5. Enhance UI in `ContentAdapter`, `item_content_card.xml`, and `ContentDetailBottomSheet` to display extracted thumbnails, captions, and creator details.
-6. Write unit tests in `AdapterRegistryTest.java` and `GenericWebAdapterTest.java`.
-7. Bump version to `0.5.0-phase5` (versionCode 5), push to GitHub, and build release APK.
+1. User testing and device verification of `Hifadhio-v0.5.0-phase5-debug.apk`:
+   - Test saving web articles and blogs.
+   - Verify extracted titles, OpenGraph descriptions, and thumbnail URLs.
+   - Verify Content Detail bottom sheet displaying extracted captions and titles.
+2. Prepare Phase 06 per Master Spec Section 1125-1150:
+   - Order of implementation:
+     1. YouTube (oEmbed + Data API / no-key fallbacks)
+     2. TikTok (oEmbed / Display API)
+     3. Instagram (oEmbed / metadata parser)
+   - Create `ADAPTER_<PLATFORM>.md` for each platform adapter.
+   - Register platform adapters into `ContentAdapterRegistry` with higher priority than `GenericWebAdapter`.

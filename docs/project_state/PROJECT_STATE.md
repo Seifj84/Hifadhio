@@ -1,11 +1,11 @@
 # Project State
 
-Last updated: 2026-09-29T05:33:00+03:00
+Last updated: 2026-09-29T05:54:00+03:00
 Updated by: Antigravity Agent
 Repository: https://github.com/Seifj84/Hifadhio.git
 Branch: main
-Latest commit: 78a71fe
-App version: 0.4.0-phase4
+Latest commit: 95920a4
+App version: 0.5.0-phase5
 Backend version: Local-first SQLite MVP (Schema v3)
 Latest migration: 003_processing_jobs_and_events
 
@@ -15,10 +15,11 @@ Latest migration: 003_processing_jobs_and_events
 - Phase 02 — Inbox Triaging & Responsive Navigation: Fixed bottom nav icon/label overlap, responsive edge-to-edge layout, quick actions (move to collection, star, copy, delete), and empty state illustrations.
 - Phase 03 — Collections, Tags & Library: Collection management (create, rename, delete with move-to-inbox), tag indexing and filtering, favorites filtering, and ContentDetailBottomSheet.
 - Phase 04 — Processing Job Framework: Asynchronous job queue (`processing_jobs`), append-only event timeline (`processing_events`), worker lease concurrency, exponential backoff retries, idempotency keys, stale job recovery, UI status indicators on cards, and retry action in Content Detail.
+- Phase 05 — Adapter Framework + Generic Web Metadata: Standardized `ContentExtractorAdapter` interface, `ContentAdapterRegistry` with prioritized routing and health checks, and `GenericWebAdapter` with OpenGraph & HTML metadata extraction, entity decoding, and relative URL resolution.
 
 ## Current phase
-Phase 04 — Processing Job Framework (COMPLETED)
-Next: Phase 05 — Adapter Framework + Generic Web Metadata
+Phase 05 — Adapter Framework + Generic Web Metadata (COMPLETED)
+Next: Phase 06 — Official Platform Metadata Integrations
 
 ## Current status
 READY_FOR_ACCEPTANCE
@@ -32,41 +33,44 @@ READY_FOR_ACCEPTANCE
 - Full Collection CRUD (Create, Rename, Delete with item preservation to Inbox)
 - Tag indexing, extraction, and tag-based filtering chips
 - Favorites / Starred items filtering
-- ContentDetailBottomSheet: Full item inspection, notes editing, tag editing, processing audit timeline, and retry trigger
-- Title override mechanism: User custom title with automatic fallback to platform title or extracted `original_title`
+- ContentDetailBottomSheet: Full item inspection, notes editing, tag editing, processing audit timeline, extracted caption display, and retry trigger
 - Processing Job Queue (`processing_jobs`): SQLite persistence, worker lease locking, heartbeat lease renewal, and stale job recovery
 - Retry Engine: Exponential backoff (2s, 4s, 8s capped at 60s) with max attempts limit (default 3)
-- Idempotency Guarantee: `job_type:content_item_id` ensures no duplicate concurrent or queued processing jobs
-- Processing Events Audit Log (`processing_events`): Append-only recording of job transitions (`ENQUEUED`, `CLAIMED`, `PROGRESS`, `COMPLETED`, `FAILED`, `CANCELLED`)
-- Visual UI Indicators: Status tags on cards (`QUEUED`, `RUNNING`, `FAILED`, `READY`) with live updates
+- Idempotency Guarantee: `job_type:content_item_id` prevents duplicate concurrent or queued processing jobs
+- Processing Events Audit Log (`processing_events`): Append-only recording of job transitions
+- Modular Adapter Architecture: `ContentExtractorAdapter` interface, `ExtractedMetadata` model, `AdapterHealth` model
+- ContentAdapterRegistry: Centralized priority-based adapter routing and health checks
+- GenericWebAdapter: OpenGraph (`og:title`, `og:description`, `og:image`, `og:site_name`, `og:type`), Twitter cards, HTML `<title>`, `<meta name="description">`, and `<link rel="canonical">`
+- HTML Entity Decoder & Relative URL Resolver
 - Official Hifadhio brand system: NAS Digital Solutions • engineered by SeifTech
 - Automated GitHub Actions CI/CD with unit test verification and GitHub Release publishing
 
 ## Current architecture
 - Mobile: Android Native (Java, Material 3, AndroidX, SDK 35)
+- Extraction Framework: Extensible `ContentExtractorAdapter` and `ContentAdapterRegistry`
 - Database: Local-first SQLite (`hifadhio.db`, Schema v3)
 - Storage: Local private app storage
 - Brand: Hifadhio (NAS Digital Solutions • engineered by SeifTech)
 
 ## Last verified commands
-- `git commit -am "fix(db): restore getCountByCollection, deleteCollection overload, getByTag, and exportToJson aliases"` — PASS
+- `git commit -am "feat(adapter): implement Phase 05 Adapter Framework..."` — PASS
 - `powershell push_repo.ps1` — PASS (Remote: https://github.com/Seifj84/Hifadhio)
-- GitHub Actions CI/CD Build #36512899916 — PASS (Status: completed, Conclusion: success)
-- Unit tests (`ProcessingJobTest`, `CollectionsAndTagsTest`, `UrlNormalizerTest`) — ALL PASS
+- GitHub Actions CI/CD Build #36514529976 — PASS (Status: completed, Conclusion: success)
+- Unit tests (`AdapterRegistryTest`, `GenericWebAdapterTest`, `ProcessingJobTest`, `CollectionsAndTagsTest`, `UrlNormalizerTest`) — ALL PASS
 - APK Package Structure & Signature Verification — PASS
 
 ## Current blockers
 - None.
 
 ## Exact next action
-Present Phase 4 completion report, test instructions, and verified APK links to the user for device testing.
+Present Phase 5 completion report, test instructions, and verified APK links to the user for device testing.
 
 ## Latest testable APK
-- Path: `release_records/phase_04_processing_framework/v0.4.0/Hifadhio-v0.4.0-phase4-debug.apk`
-- Workspace Root: `Hifadhio-v0.4.0-phase4-debug.apk`
-- Direct Download: https://github.com/Seifj84/Hifadhio/releases/download/v0.4.0-phase4/Hifadhio-v0.4.0-phase4-debug.apk
-- GitHub Release: https://github.com/Seifj84/Hifadhio/releases/tag/v0.4.0-phase4
+- Path: `release_records/phase_05_adapter_framework/v0.5.0/Hifadhio-v0.5.0-phase5-debug.apk`
+- Workspace Root: `Hifadhio-v0.5.0-phase5-debug.apk`
+- Direct Download: https://github.com/Seifj84/Hifadhio/releases/download/v0.5.0-phase5/Hifadhio-v0.5.0-phase5-debug.apk
+- GitHub Release: https://github.com/Seifj84/Hifadhio/releases/tag/v0.5.0-phase5
 - Build type: debug
-- Version: 0.4.0-phase4 (versionCode 4)
-- Size: 6,276,301 bytes (6.0 MB)
-- Phase: Phase 04 Processing Job Framework
+- Version: 0.5.0-phase5 (versionCode 5)
+- Size: 6,287,227 bytes (6.0 MB)
+- Phase: Phase 05 Adapter Framework + Generic Web Metadata
