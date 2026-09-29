@@ -3,6 +3,9 @@ package com.seiftech.hifadhio.data;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import com.seiftech.hifadhio.adapter.ContentAdapterRegistry;
+import com.seiftech.hifadhio.adapter.ContentExtractorAdapter;
+import com.seiftech.hifadhio.adapter.ExtractedMetadata;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -106,26 +109,62 @@ public class ProcessingJobManager {
             return;
         }
 
-        // Stage 1: Initializing
-        db.updateJobProgress(job.getId(), 20, "Analyzing content link");
-        notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_RUNNING, "Analyzing content link");
-        Thread.sleep(300);
+        // Stage 1: Adapter Selection
+        db.updateJobProgress(job.getId(), 15, "Identifying content adapter");
+        notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_RUNNING, "Identifying content adapter");
 
-        // Stage 2: Normalization & Platform detection
-        db.updateJobProgress(job.getId(), 50, "Extracting platform metadata");
-        notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_RUNNING, "Extracting platform metadata");
-        Thread.sleep(400);
+        ContentExtractorAdapter adapter = ContentAdapterRegistry.getInstance().getAdapterForUrl(item.getUrl());
+        String platformId = adapter != null ? adapter.getPlatformId() : "GenericWeb";
 
-        // Stage 3: Title & summary heuristics
-        String fallbackTitle = item.getDisplayTitle();
-        if (item.getTitle() == null || item.getTitle().trim().isEmpty()) {
-            item.setTitle(fallbackTitle);
-            db.update(item);
+        // Stage 2: Metadata Extraction via Adapter
+        db.updateJobProgress(job.getId(), 40, "Extracting metadata via " + platformId);
+        notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_RUNNING, "Extracting metadata via " + platformId);
+
+        ExtractedMetadata meta = null;
+        if (adapter != null) {
+            meta = adapter.extract(item.getUrl());
         }
 
-        db.updateJobProgress(job.getId(), 85, "Finalizing item indexing");
-        notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_RUNNING, "Finalizing item indexing");
-        Thread.sleep(300);
+        // Stage 3: Applying extracted metadata to ContentItem
+        db.updateJobProgress(job.getId(), 75, "Applying metadata & indexing");
+        notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_RUNNING, "Applying metadata & indexing");
+
+        if (meta != null) {
+            // Preserve user-edited custom title, store extracted original_title
+            if (meta.getTitle() != null && !meta.getTitle().isEmpty()) {
+                item.setOriginalTitle(meta.getTitle());
+                String curTitle = item.getTitle();
+                if (curTitle == null || curTitle.trim().isEmpty() || curTitle.equals(item.getPlatform() + " Link") || curTitle.equals("Saved Link")) {
+                    item.setTitle(meta.getTitle());
+                }
+            }
+            if (meta.getDescription() != null && !meta.getDescription().isEmpty()) {
+                String curCaption = item.getCaption();
+                if (curCaption == null || curCaption.trim().isEmpty()) {
+                    item.setCaption(meta.getDescription());
+                }
+            }
+            if (meta.getThumbnailUrl() != null && !meta.getThumbnailUrl().isEmpty()) {
+                item.setThumbnailUrl(meta.getThumbnailUrl());
+            }
+            if (meta.getCanonicalUrl() != null && !meta.getCanonicalUrl().isEmpty()) {
+                item.setCanonicalUrl(meta.getCanonicalUrl());
+            }
+            if (meta.getPlatform() != null && !meta.getPlatform().isEmpty() && !"Web".equalsIgnoreCase(meta.getPlatform())) {
+                item.setPlatform(meta.getPlatform());
+            }
+            item.setUpdatedAt(System.currentTimeMillis());
+            db.update(item);
+        } else {
+            String fallbackTitle = item.getDisplayTitle();
+            if (item.getTitle() == null || item.getTitle().trim().isEmpty()) {
+                item.setTitle(fallbackTitle);
+                db.update(item);
+            }
+        }
+
+        db.updateJobProgress(job.getId(), 95, "Finalizing indexing");
+        notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_RUNNING, "Finalizing indexing");
 
         // Stage 4: Mark Complete
         db.completeJob(job.getId());

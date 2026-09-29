@@ -48,7 +48,7 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
     private ContentDb db;
     private OnContentActionListener listener;
 
-    private TextView tvPlatform, tvDate, tvTitle, tvOriginalTitle, tvStatus, tvUrl, tvNotes;
+    private TextView tvPlatform, tvDate, tvTitle, tvOriginalTitle, tvCaption, tvStatus, tvUrl, tvNotes;
     private TextView tvJobStatus, tvJobMessage;
     private ImageView btnFav, btnClose, btnCopyUrl;
     private Chip chipCollection;
@@ -98,6 +98,7 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
         btnClose = view.findViewById(R.id.btn_detail_close);
         tvTitle = view.findViewById(R.id.tv_detail_title);
         tvOriginalTitle = view.findViewById(R.id.tv_detail_original_title);
+        tvCaption = view.findViewById(R.id.tv_detail_caption);
         chipCollection = view.findViewById(R.id.chip_detail_collection);
         tvStatus = view.findViewById(R.id.tv_detail_status);
         tvUrl = view.findViewById(R.id.tv_detail_url);
@@ -204,6 +205,13 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
             tvOriginalTitle.setText("Original: " + item.getOriginalTitle().trim());
         } else {
             tvOriginalTitle.setVisibility(View.GONE);
+        }
+
+        if (item.getCaption() != null && !item.getCaption().trim().isEmpty()) {
+            tvCaption.setVisibility(View.VISIBLE);
+            tvCaption.setText(item.getCaption().trim());
+        } else {
+            tvCaption.setVisibility(View.GONE);
         }
 
         chipCollection.setText(item.getCollectionName());

@@ -1,13 +1,11 @@
 # Next Action
 
-Phase: Transitioning to Phase 05 - Adapter Framework + Generic Web Metadata
+Phase: Phase 05 - Adapter Framework + Generic Web Metadata
 
-1. User testing and device verification of `Hifadhio-v0.4.0-phase4-debug.apk`:
-   - Verify job creation on link capture.
-   - Verify processing status indicator display on cards (`QUEUED`, `RUNNING`, `READY`, `FAILED`).
-   - Verify audit event timeline and "Retry Processing" action inside Content Detail bottom sheet.
-2. Prepare Phase 05 plan per Master Spec Section 1109-1124:
-   - Design `ContentAdapterRegistry` and `ContentExtractorAdapter` interface.
-   - Implement `GenericWebAdapter` with OpenGraph metadata extraction (`og:title`, `og:description`, `og:image`, canonical URL).
-   - Hook adapter extraction into `ProcessingJobManager` worker loop.
-   - Add unit tests with HTML/OpenGraph fixtures.
+1. Implement `ContentExtractorAdapter.java` interface, `ExtractedMetadata.java`, and `AdapterHealth.java` in package `com.seiftech.hifadhio.adapter`.
+2. Implement `ContentAdapterRegistry.java` with priority ordering, dynamic registration, and health monitoring.
+3. Implement `GenericWebAdapter.java` with OpenGraph & HTML metadata extraction, entity decoding, and relative URL resolution.
+4. Integrate `ContentAdapterRegistry` into `ProcessingJobManager.java` for real metadata extraction and database updates.
+5. Enhance UI in `ContentAdapter`, `item_content_card.xml`, and `ContentDetailBottomSheet` to display extracted thumbnails, captions, and creator details.
+6. Write unit tests in `AdapterRegistryTest.java` and `GenericWebAdapterTest.java`.
+7. Bump version to `0.5.0-phase5` (versionCode 5), push to GitHub, and build release APK.

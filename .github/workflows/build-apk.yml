@@ -1,4 +1,4 @@
-name: Build Hifadhio Phase 4 APK
+name: Build Hifadhio Phase 5 APK
 
 on:
   push:
@@ -43,48 +43,46 @@ jobs:
 
       - name: Prepare Release Artifacts
         run: |
-          mkdir -p release_records/phase_04_processing_framework/v0.4.0/
-          cp android/app/build/outputs/apk/debug/app-debug.apk release_records/phase_04_processing_framework/v0.4.0/Hifadhio-v0.4.0-phase4-debug.apk
-          cd release_records/phase_04_processing_framework/v0.4.0/
-          zip -9 Hifadhio-v0.4.0-phase4-debug.zip Hifadhio-v0.4.0-phase4-debug.apk
-          sha256sum Hifadhio-v0.4.0-phase4-debug.apk > SHA256SUMS.txt
-          sha256sum Hifadhio-v0.4.0-phase4-debug.zip >> SHA256SUMS.txt
+          mkdir -p release_records/phase_05_adapter_framework/v0.5.0/
+          cp android/app/build/outputs/apk/debug/app-debug.apk release_records/phase_05_adapter_framework/v0.5.0/Hifadhio-v0.5.0-phase5-debug.apk
+          cd release_records/phase_05_adapter_framework/v0.5.0/
+          zip -9 Hifadhio-v0.5.0-phase5-debug.zip Hifadhio-v0.5.0-phase5-debug.apk
+          sha256sum Hifadhio-v0.5.0-phase5-debug.apk > SHA256SUMS.txt
+          sha256sum Hifadhio-v0.5.0-phase5-debug.zip >> SHA256SUMS.txt
           cat SHA256SUMS.txt
           cd ../../..
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Hifadhio-v0.4.0-phase4-debug
+          name: Hifadhio-v0.5.0-phase5-debug
           path: |
-            release_records/phase_04_processing_framework/v0.4.0/Hifadhio-v0.4.0-phase4-debug.apk
-            release_records/phase_04_processing_framework/v0.4.0/Hifadhio-v0.4.0-phase4-debug.zip
+            release_records/phase_05_adapter_framework/v0.5.0/Hifadhio-v0.5.0-phase5-debug.apk
+            release_records/phase_05_adapter_framework/v0.5.0/Hifadhio-v0.5.0-phase5-debug.zip
           if-no-files-found: error
 
       - name: Create GitHub Release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.4.0-phase4
-          name: "Hifadhio v0.4.0 (Phase 4 Processing Job Framework)"
+          tag_name: v0.5.0-phase5
+          name: "Hifadhio v0.5.0 (Phase 5 Adapter Framework & Generic Web Metadata)"
           body: |
-            ## Hifadhio v0.4.0 — Phase 4 Processing Job Framework
+            ## Hifadhio v0.5.0 — Phase 5 Adapter Framework & Generic Web Metadata
 
             > **Save once. Find it when it matters.**
             > A NAS Digital Solutions product - engineered by SeifTech.
 
-            ### What's New in Phase 4:
-            - **Asynchronous Processing Pipeline**: Decoupled link capture from background content extraction via SQLite database schema v3.
-            - **Processing Jobs (`processing_jobs`)**: Persisted job queue with state transitions (`QUEUED`, `CLAIMED`, `RUNNING`, `RETRYING`, `COMPLETED`, `FAILED`, `CANCELLED`).
-            - **Worker Claim & Lease Locking**: Atomic worker claims with configurable lease durations and heartbeat renewal preventing multi-worker race conditions.
-            - **Stale Job Recovery**: Interrupted, abandoned, or crashed worker jobs automatically recover back to `QUEUED` when leases expire.
-            - **Exponential Backoff & Retry**: Failed network or parsing jobs automatically retry with exponential backoff up to `max_attempts = 3`.
-            - **Idempotency Key Guarantees**: Prevents duplicate job execution for identical items.
-            - **Audit Events Timeline (`processing_events`)**: Append-only log tracking every stage transition and progress milestone.
-            - **UI Real-Time Status & Retry Action**: Content cards and Content Detail sheets display live processing indicators, progress status, and a one-tap "Retry Processing" button for failed jobs.
-            - **Comprehensive Test Suite**: Unit tests verifying worker lease, exponential backoff, idempotency, stale recovery, and cancellation.
+            ### What's New in Phase 5:
+            - **Extensible Adapter Framework**: Standardized `ContentExtractorAdapter` interface separating platform extraction logic from core database domain.
+            - **ContentAdapterRegistry**: Priority-based singleton registry supporting dynamic platform adapter registration and adapter health checks.
+            - **GenericWebAdapter**: Universal web metadata extractor supporting OpenGraph tags (`og:title`, `og:description`, `og:image`, `og:site_name`, `og:type`), Twitter cards, and standard HTML `<title>`, `<meta name="description">`, and `<link rel="canonical">`.
+            - **HTML Entity Decoding & Relative URL Resolution**: Automatically decodes HTML entities (`&amp;`, `&#39;`, `&quot;`, `&mdash;`) and resolves relative thumbnail/canonical URLs against the base domain.
+            - **Automated Processing Pipeline Integration**: `ProcessingJobManager` connects directly to the adapter registry, populating real titles, extracted captions, and high-resolution thumbnail URLs into `ContentDb`.
+            - **Rich Metadata Display**: Content cards and Content Detail sheets now surface extracted descriptions and original extracted titles.
+            - **Unit Test Coverage**: Comprehensive test suites for `AdapterRegistryTest` (registration, priority routing, fallback) and `GenericWebAdapterTest` (OpenGraph extraction, attribute ordering variations, HTML fallback, entity decoding).
           files: |
-            release_records/phase_04_processing_framework/v0.4.0/Hifadhio-v0.4.0-phase4-debug.apk
-            release_records/phase_04_processing_framework/v0.4.0/Hifadhio-v0.4.0-phase4-debug.zip
+            release_records/phase_05_adapter_framework/v0.5.0/Hifadhio-v0.5.0-phase5-debug.apk
+            release_records/phase_05_adapter_framework/v0.5.0/Hifadhio-v0.5.0-phase5-debug.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

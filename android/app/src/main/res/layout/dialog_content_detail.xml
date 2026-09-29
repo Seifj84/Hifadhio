@@ -84,6 +84,18 @@
             android:textSize="12sp"
             android:visibility="gone" />
 
+        <!-- Extracted Caption / Description -->
+        <TextView
+            android:id="@+id/tv_detail_caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Extracted description..."
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp"
+            android:lineSpacingExtra="2dp"
+            android:visibility="gone" />
+
         <!-- Collection Chip & Status -->
         <LinearLayout
             android:layout_width="match_parent"

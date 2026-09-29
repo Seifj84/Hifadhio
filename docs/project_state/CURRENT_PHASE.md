@@ -1,73 +1,60 @@
 # Current Phase
 
-Phase: Phase 04
-Name: Processing Job Framework
-Status: COMPLETED
-Started: 2026-09-29T05:16:00+03:00
-Completed: 2026-09-29T05:33:00+03:00
-Target specification section: Sections 629-662 & 1091-1108 of Master Spec
+Phase: Phase 05
+Name: Adapter Framework + Generic Web Metadata
+Status: IN_PROGRESS
+Started: 2026-09-29T05:46:00+03:00
+Target specification section: Sections 500-545, 690-740 & 1109-1124 of Master Spec
 
 ## Objective
-Establish an asynchronous, reliable processing job framework with SQLite persistence (database schema v3), worker claim/lease concurrency control, exponential backoff retries, idempotency key guarantees, stale job recovery, append-only processing event timeline, UI status indicators on content items, and retry actions on failed jobs.
+Establish an extensible adapter framework with a centralized adapter registry, a clean `ContentExtractorAdapter` interface, adapter health checks, platform-specific URL canonicalizers, and a robust `GenericWebAdapter` capable of extracting OpenGraph and HTML meta tags (title, description, image, creator, canonical URL). Connect the adapter framework to the `ProcessingJobManager` background worker pipeline so saved items are enriched with real metadata.
 
 ## In scope
-- [x] Database upgrade (v3): Create `processing_jobs` and `processing_events` tables in `ContentDb`.
-- [x] ProcessingJob and ProcessingEvent domain models.
-- [x] Worker claim/lease mechanism with lease expiration & heartbeats.
-- [x] Retry with exponential backoff and max attempt limits.
-- [x] Idempotency keys (`job_type:content_item_id`) preventing duplicate jobs.
-- [x] Stale-job recovery for interrupted or abandoned worker leases.
-- [x] ProcessingJobManager background executor orchestrating jobs and updating content item status.
-- [x] UI visual status indicators on cards and processing event timeline with "Retry" action in Content Detail sheet.
-- [x] Comprehensive unit test suite (`ProcessingJobTest.java`) covering lease, retry, idempotency, recovery, and cancellation.
-- [x] Version bump to `0.4.0-phase4` in `build.gradle` and CI/CD workflow.
-- [x] Verified APK build published to GitHub Releases.
+- [ ] `ContentExtractorAdapter` interface defining contract for all platform extractors.
+- [ ] `ExtractedMetadata` and `AdapterHealth` domain models.
+- [ ] `ContentAdapterRegistry` singleton providing adapter lookup, prioritization, dynamic registration, and health monitoring.
+- [ ] `GenericWebAdapter` implementation extracting OpenGraph (`og:title`, `og:description`, `og:image`, `og:site_name`, `og:type`), Twitter cards, and standard HTML `<title>`, `<meta name="description">`, and `<link rel="canonical">`.
+- [ ] Relative-to-absolute URL resolution and HTML entity decoding for extracted strings.
+- [ ] Platform-specific URL canonicalization in `UrlNormalizer` and adapters.
+- [ ] Integration with `ProcessingJobManager` worker loop: replace dummy milestones with real extraction, updating `ContentItem` title, original_title, caption, thumbnail_url, and status.
+- [ ] Card and detail sheet display of extracted metadata and thumbnail preview.
+- [ ] Comprehensive unit test suites (`AdapterRegistryTest.java`, `GenericWebAdapterTest.java`) with HTML/OpenGraph fixtures.
+- [ ] Version bump to `0.5.0-phase5` in `build.gradle` and CI/CD workflow.
+- [ ] Verified APK build published to GitHub Releases.
 
 ## Out of scope
-- Live scraping of third-party platforms (scheduled for Phase 05/06 adapters).
-- Whisper / audio transcription and OCR (scheduled for Phase 07+).
+- Official authenticated APIs for YouTube Data API, TikTok Display API, Instagram Graph API (scheduled for Phase 06).
+- Video binary downloading, audio transcription with Whisper, OCR (scheduled for Phase 07).
 
 ## Preconditions
-- Phase 03 completed, tested, and verified on physical device.
+- Phase 04 completed, tested, and verified on physical device.
 - Clean GitHub repository state at `Seifj84/Hifadhio` on `main`.
 
 ## Work units
-- [x] WU-01 Project state documentation initialization
-- [x] WU-02 ProcessingJob & ProcessingEvent data models
-- [x] WU-03 Database schema upgrade v3 & job/event CRUD operations in ContentDb
-- [x] WU-04 ProcessingJobManager with background execution & worker leasing
-- [x] WU-05 UI integration in ContentAdapter, item cards, and ContentDetailBottomSheet
-- [x] WU-06 Unit test suite ProcessingJobTest
-- [x] WU-07 Version bump to 0.4.0-phase4 and CI/CD automated build
-- [x] WU-08 APK verification and release publishing
+- [ ] WU-01 Project state documentation initialization
+- [ ] WU-02 `ContentExtractorAdapter` interface, `ExtractedMetadata`, and `AdapterHealth` models
+- [ ] WU-03 `ContentAdapterRegistry` with prioritized lookup and health check API
+- [ ] WU-04 `GenericWebAdapter` with OpenGraph/HTML parser and entity decoder
+- [ ] WU-05 Connect `ProcessingJobManager` to extract real metadata and persist to `ContentDb`
+- [ ] WU-06 UI updates to display extracted thumbnails, captions, and creator information
+- [ ] WU-07 Unit test suites `AdapterRegistryTest` and `GenericWebAdapterTest` with HTML test fixtures
+- [ ] WU-08 Version bump to `0.5.0-phase5` (versionCode 5) and CI/CD automated build
+- [ ] WU-09 APK verification and release publishing
 
 ## Required tests
-- [x] Worker lease claim & concurrency: PASS
-- [x] Exponential backoff & retry progression: PASS
-- [x] Idempotency key duplicate prevention: PASS
-- [x] Stale job recovery from expired leases: PASS
-- [x] Job cancellation: PASS
-- [x] Processing events timeline recording: PASS
-- [x] Automated CI/CD build: PASS
+- [ ] Adapter registry registration and lookup: PASS
+- [ ] Registry fallback to GenericWebAdapter: PASS
+- [ ] OpenGraph extraction (title, description, image, site_name): PASS
+- [ ] HTML fallback extraction (`<title>`, `<meta name="description">`): PASS
+- [ ] HTML entity decoding and relative URL resolution: PASS
+- [ ] Extraction error handling with sanitized messages: PASS
+- [ ] Automated CI/CD build: PASS
 
 ## Phase acceptance criteria
-1. `processing_jobs` and `processing_events` tables created with full indexing.
-2. A test job can fail, retry with exponential backoff, recover from worker interruption, and complete without duplication.
-3. Content items reflect live processing states (`SAVED`, `PROCESSING`, `READY`, `FAILED`).
-4. Content Detail view provides an audit timeline of processing events and retry action for failed jobs.
-5. All unit tests pass in CI/CD, and an installable test APK v0.4.0-phase4 is published.
+1. Adding a new platform adapter does not require modifying core content-domain logic (Registry pattern).
+2. Saving any standard web link or article extracts real title, description, and thumbnail without user manual input.
+3. Content cards and detail bottom sheet display the extracted metadata and preview.
+4. All unit tests pass in CI/CD, and an installable test APK v0.5.0-phase5 is published.
 
 ## Blockers
 None.
-
-## Completion evidence
-- GitHub Actions CI/CD Build Run #36512899916 succeeded.
-- GitHub Release `v0.4.0-phase4` published.
-- Unit test suites (`ProcessingJobTest`, `CollectionsAndTagsTest`, `UrlNormalizerTest`) executed and passed in CI.
-- Downloaded APK verified (6,276,301 bytes).
-
-## APK status
-AVAILABLE
-- Direct Download: https://github.com/Seifj84/Hifadhio/releases/download/v0.4.0-phase4/Hifadhio-v0.4.0-phase4-debug.apk
-- Release Page: https://github.com/Seifj84/Hifadhio/releases/tag/v0.4.0-phase4
-- Local Workspace Path: `Hifadhio-v0.4.0-phase4-debug.apk` and `release_records/phase_04_processing_framework/v0.4.0/Hifadhio-v0.4.0-phase4-debug.apk`
