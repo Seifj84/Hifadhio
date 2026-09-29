@@ -8,7 +8,7 @@
 - **Target Specification**: Sections 15.3, 20.2, 35 (ADR-007) & 1171-1188 of Master Spec
 - **Version**: `0.8.0-phase8` (versionCode 8)
 - **GitHub Release**: [`v0.8.0-phase8`](https://github.com/Seifj84/Hifadhio/releases/tag/v0.8.0-phase8)
-- **CI Build Run**: [#36613512263](https://github.com/Seifj84/Hifadhio/actions/runs/36613512263)
+- **CI Build Run**: [#36615030069](https://github.com/Seifj84/Hifadhio/actions/runs/36615030069)
 - **Direct APK**: `Hifadhio-v0.8.0-phase8-debug.apk`
 
 ---
@@ -157,6 +157,8 @@ The test suite expanded to **18 comprehensive unit test suites** with 100% passi
 ## 9. Deliverables & Build Artifacts
 
 - **Debug APK**: `Hifadhio-v0.8.0-phase8-debug.apk`
+- **File Size**: `6,337,858 bytes` (~6.04 MB)
+- **SHA256 Checksum**: `1F5EF85D7F7FB5FDD4F4CD9740A828069540E48FE81329E0AED04A9F08D20FB5`
 - **Version**: `0.8.0-phase8` (versionCode 8)
 - **GitHub Release Tag**: `v0.8.0-phase8`
 - **Release Records Location**: `release_records/phase_08_transcription/v0.8.0/`
