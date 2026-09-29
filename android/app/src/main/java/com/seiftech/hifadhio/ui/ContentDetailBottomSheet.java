@@ -33,10 +33,16 @@ import com.seiftech.hifadhio.data.ProcessingJobManager;
 import com.seiftech.hifadhio.data.TimeUtils;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.widget.ImageButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import android.widget.LinearLayout;
 import com.seiftech.hifadhio.media.MediaArtifact;
 import com.seiftech.hifadhio.media.MediaStorageManager;
+import com.seiftech.hifadhio.transcription.AudioExtractor;
+import com.seiftech.hifadhio.transcription.Transcript;
+import com.seiftech.hifadhio.transcription.TranscriptSegment;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -66,6 +72,13 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
     private TextView btnEditNote, btnAddTag;
     private LinearLayout layoutEventsList, layoutTechDetails, layoutUserSteps;
     private boolean isTechDetailsExpanded = false;
+
+    // Phase 08: Transcript Views
+    private LinearLayout layoutTranscript, layoutTranscriptSegments;
+    private TextView tvTranscriptProvider, tvTranscriptDuration, tvTranscriptText;
+    private EditText etTranscriptSearch;
+    private ImageButton btnCopyTranscript;
+    private MaterialButton btnTranscribeAction;
 
     public static ContentDetailBottomSheet newInstance(ContentItem item) {
         ContentDetailBottomSheet sheet = new ContentDetailBottomSheet();
@@ -133,6 +146,51 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
         tvTechStorageInfo = view.findViewById(R.id.tv_tech_storage_info);
         cardThumbnail = view.findViewById(R.id.card_detail_thumbnail);
         ivThumbnail = view.findViewById(R.id.iv_detail_thumbnail);
+
+        // Phase 08 Transcript Views
+        layoutTranscript = view.findViewById(R.id.layout_detail_transcript);
+        layoutTranscriptSegments = view.findViewById(R.id.layout_transcript_segments);
+        tvTranscriptProvider = view.findViewById(R.id.tv_transcript_badge_provider);
+        tvTranscriptDuration = view.findViewById(R.id.tv_transcript_badge_duration);
+        tvTranscriptText = view.findViewById(R.id.tv_detail_transcript_text);
+        etTranscriptSearch = view.findViewById(R.id.et_transcript_search);
+        btnCopyTranscript = view.findViewById(R.id.btn_copy_transcript);
+        btnTranscribeAction = view.findViewById(R.id.btn_transcribe_action);
+
+        if (btnCopyTranscript != null) {
+            btnCopyTranscript.setOnClickListener(v -> {
+                Transcript t = db.getTranscriptForItem(item.getId());
+                if (t != null && t.getFullText() != null && !t.getFullText().isEmpty()) {
+                    ClipboardManager cm = (ClipboardManager) requireContext().getSystemService(Context.CLIPBOARD_SERVICE);
+                    if (cm != null) {
+                        cm.setPrimaryClip(ClipData.newPlainText("Transcript", t.getFullText()));
+                        Toast.makeText(requireContext(), "Transcript copied to clipboard", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+        }
+
+        if (btnTranscribeAction != null) {
+            btnTranscribeAction.setOnClickListener(v -> {
+                ProcessingJobManager.getInstance(requireContext()).enqueueTranscription(item.getId());
+                Toast.makeText(requireContext(), "Transcription job scheduled", Toast.LENGTH_SHORT).show();
+                populateViews();
+                if (listener != null) listener.onContentUpdated(item);
+            });
+        }
+
+        if (etTranscriptSearch != null) {
+            etTranscriptSearch.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    filterTranscript(s != null ? s.toString() : "");
+                }
+                @Override
+                public void afterTextChanged(Editable s) {}
+            });
+        }
 
         if (btnToggleTechDetails != null && layoutTechDetails != null) {
             btnToggleTechDetails.setOnClickListener(v -> {
@@ -281,6 +339,7 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
 
         populateTags();
         populateProcessingTimeline();
+        populateTranscript();
     }
 
     private void populateProcessingTimeline() {
@@ -585,5 +644,121 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    private void populateTranscript() {
+        if (layoutTranscript == null) return;
+
+        Transcript transcript = db.getTranscriptForItem(item.getId());
+        AudioExtractor audioExtractor = new AudioExtractor(requireContext(), MediaStorageManager.getInstance(requireContext()));
+        boolean isEligible = audioExtractor.isEligibleForTranscription(item);
+
+        if (transcript != null) {
+            layoutTranscript.setVisibility(View.VISIBLE);
+            if (tvTranscriptProvider != null) {
+                tvTranscriptProvider.setText(transcript.getProviderId());
+            }
+            if (tvTranscriptDuration != null) {
+                tvTranscriptDuration.setText(transcript.getFormattedDuration());
+                tvTranscriptDuration.setVisibility(transcript.getDurationMs() > 0 ? View.VISIBLE : View.GONE);
+            }
+            if (tvTranscriptText != null) {
+                tvTranscriptText.setText(transcript.getFullText());
+            }
+            if (btnCopyTranscript != null) {
+                btnCopyTranscript.setVisibility(View.VISIBLE);
+            }
+            if (btnTranscribeAction != null) {
+                btnTranscribeAction.setVisibility(View.GONE);
+            }
+            renderTranscriptSegments(transcript.getSegments());
+        } else if (isEligible) {
+            layoutTranscript.setVisibility(View.VISIBLE);
+            if (tvTranscriptProvider != null) {
+                tvTranscriptProvider.setText("Eligible");
+            }
+            if (tvTranscriptDuration != null) {
+                tvTranscriptDuration.setVisibility(View.GONE);
+            }
+            if (tvTranscriptText != null) {
+                tvTranscriptText.setText("Speech transcript has not been extracted yet.");
+            }
+            if (btnCopyTranscript != null) {
+                btnCopyTranscript.setVisibility(View.GONE);
+            }
+            if (btnTranscribeAction != null) {
+                btnTranscribeAction.setVisibility(View.VISIBLE);
+                btnTranscribeAction.setText("Transcribe Speech");
+            }
+            if (layoutTranscriptSegments != null) {
+                layoutTranscriptSegments.removeAllViews();
+            }
+        } else {
+            layoutTranscript.setVisibility(View.GONE);
+        }
+    }
+
+    private void renderTranscriptSegments(List<TranscriptSegment> segments) {
+        if (layoutTranscriptSegments == null) return;
+        layoutTranscriptSegments.removeAllViews();
+        if (segments == null || segments.isEmpty()) return;
+
+        for (TranscriptSegment seg : segments) {
+            if (!seg.hasTimestamps()) continue;
+            LinearLayout row = new LinearLayout(requireContext());
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setPadding(0, 4, 0, 4);
+
+            TextView tvTime = new TextView(requireContext());
+            tvTime.setText("[" + seg.getFormattedTimestamp() + "] ");
+            tvTime.setTextColor(ContextCompat.getColor(requireContext(), R.color.mint));
+            tvTime.setTextSize(11);
+            tvTime.setTypeface(null, android.graphics.Typeface.BOLD);
+
+            TextView tvSegText = new TextView(requireContext());
+            tvSegText.setText(seg.getText());
+            tvSegText.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary));
+            tvSegText.setTextSize(12);
+
+            row.addView(tvTime);
+            row.addView(tvSegText);
+            layoutTranscriptSegments.addView(row);
+        }
+    }
+
+    private void filterTranscript(String query) {
+        if (layoutTranscript == null) return;
+        Transcript transcript = db.getTranscriptForItem(item.getId());
+        if (transcript == null) return;
+
+        if (query == null || query.trim().isEmpty()) {
+            if (tvTranscriptText != null) {
+                tvTranscriptText.setText(transcript.getFullText());
+                tvTranscriptText.setVisibility(View.VISIBLE);
+            }
+            renderTranscriptSegments(transcript.getSegments());
+            return;
+        }
+
+        String q = query.trim().toLowerCase();
+        if (transcript.hasTimestamps()) {
+            List<TranscriptSegment> filtered = transcript.searchSegments(q);
+            renderTranscriptSegments(filtered);
+            if (tvTranscriptText != null) {
+                tvTranscriptText.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);
+                if (filtered.isEmpty()) {
+                    tvTranscriptText.setText("No segments matching \"" + query + "\"");
+                }
+            }
+        } else {
+            if (tvTranscriptText != null) {
+                tvTranscriptText.setVisibility(View.VISIBLE);
+                if (transcript.getFullText().toLowerCase().contains(q)) {
+                    tvTranscriptText.setText(transcript.getFullText());
+                } else {
+                    tvTranscriptText.setText("No matching speech text for \"" + query + "\"");
+                }
+            }
+        }
     }
 }

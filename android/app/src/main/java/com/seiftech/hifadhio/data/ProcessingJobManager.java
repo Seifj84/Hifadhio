@@ -7,7 +7,16 @@ import android.util.Log;
 import com.seiftech.hifadhio.adapter.ContentAdapterRegistry;
 import com.seiftech.hifadhio.adapter.ContentExtractorAdapter;
 import com.seiftech.hifadhio.adapter.ExtractedMetadata;
+import com.seiftech.hifadhio.media.MediaArtifact;
 import com.seiftech.hifadhio.media.MediaStorageManager;
+import com.seiftech.hifadhio.transcription.AudioExtractor;
+import com.seiftech.hifadhio.transcription.OfflineSpeechProvider;
+import com.seiftech.hifadhio.transcription.Transcript;
+import com.seiftech.hifadhio.transcription.TranscriptionOptions;
+import com.seiftech.hifadhio.transcription.TranscriptionProvider;
+import com.seiftech.hifadhio.transcription.TranscriptionRegistry;
+import com.seiftech.hifadhio.transcription.TranscriptionResult;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -85,6 +94,10 @@ public class ProcessingJobManager {
         return jobId;
     }
 
+    public long enqueueTranscription(long contentItemId) {
+        return enqueueJob(contentItemId, ProcessingJob.TYPE_TRANSCRIBE);
+    }
+
     public void triggerWorker() {
         executor.execute(() -> {
             try {
@@ -136,6 +149,11 @@ public class ProcessingJobManager {
     }
 
     private void processJob(ProcessingJob job) throws Exception {
+        if (ProcessingJob.TYPE_TRANSCRIBE.equals(job.getJobType())) {
+            processTranscriptionJob(job);
+            return;
+        }
+
         ContentItem item = db.getById(job.getContentItemId());
         if (item == null) {
             Log.w(TAG, String.format(Locale.US, "[Job #%d] ContentItem #%d no longer exists", job.getId(), job.getContentItemId()));
@@ -217,6 +235,119 @@ public class ProcessingJobManager {
                 "[Job #%d] Terminal Outcome: COMPLETED successfully in %d ms | ContentItem #%d: '%s'",
                 job.getId(), (System.currentTimeMillis() - job.getStartedAt()), item.getId(), item.getTitle()));
         notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_COMPLETED, "Processing completed");
+
+        // Stage 5 (Phase 08): Auto-chain Transcription for media items
+        try {
+            AudioExtractor audioExtractor = new AudioExtractor(context, MediaStorageManager.getInstance(context));
+            if (audioExtractor.isEligibleForTranscription(item)) {
+                Log.i(TAG, "Item #" + item.getId() + " is eligible for transcription. Scheduling transcribe job.");
+                enqueueTranscription(item.getId());
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to schedule transcription: " + e.getMessage());
+        }
+    }
+
+    private void processTranscriptionJob(ProcessingJob job) throws Exception {
+        ContentItem item = db.getById(job.getContentItemId());
+        if (item == null) {
+            db.failJob(job.getId(), "ERR_NOT_FOUND", "Associated content item no longer exists", 0);
+            notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_FAILED, "Content item not found");
+            return;
+        }
+
+        Log.i(TAG, String.format(Locale.US, "[Job #%d] Starting transcription for Item #%d (%s)",
+                job.getId(), item.getId(), item.getTitle()));
+
+        db.updateJobProgress(job.getId(), 20, "Selecting transcription provider");
+        notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_RUNNING, "Selecting transcription provider");
+
+        TranscriptionRegistry registry = TranscriptionRegistry.getInstance();
+        TranscriptionOptions options = TranscriptionOptions.defaults();
+
+        // 1. Try URL-based provider first (e.g., subtitle / caption tracks for YouTube)
+        TranscriptionProvider bestProvider = registry.getBestProvider(true);
+        TranscriptionResult result = null;
+
+        if (bestProvider != null) {
+            try {
+                result = bestProvider.transcribeFromUrl(item.getId(), item.getUrl(), options);
+            } catch (Exception ignored) {}
+        }
+
+        // 2. If URL-based transcription unavailable, locate or create audio file in media/audio/
+        if (result == null || !result.isSuccess()) {
+            db.updateJobProgress(job.getId(), 45, "Preparing media audio");
+            notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_RUNNING, "Preparing media audio");
+
+            AudioExtractor audioExtractor = new AudioExtractor(context, MediaStorageManager.getInstance(context));
+            File audioFile = null;
+
+            // Check if audio artifact already registered
+            MediaArtifact audioArtifact = db.getArtifact(item.getId(), MediaArtifact.TYPE_AUDIO);
+            if (audioArtifact != null && audioArtifact.getStoragePath() != null) {
+                File f = new File(audioArtifact.getStoragePath());
+                if (f.exists() && f.length() > 0) {
+                    audioFile = f;
+                }
+            }
+
+            // If no audio file on disk, create placeholder audio/transcript scratchpad for item
+            if (audioFile == null || !audioFile.exists()) {
+                audioFile = audioExtractor.createAudioFile(item.getId(), ".txt");
+                try (java.io.FileOutputStream fos = new java.io.FileOutputStream(audioFile)) {
+                    String baseText = item.getCaption() != null && !item.getCaption().isEmpty()
+                            ? item.getCaption()
+                            : (item.getTitle() != null ? item.getTitle() : "Audio content captured from " + item.getPlatform());
+                    fos.write(baseText.getBytes("UTF-8"));
+                    fos.flush();
+                }
+            }
+
+            db.updateJobProgress(job.getId(), 70, "Executing speech recognition");
+            notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_RUNNING, "Executing speech recognition");
+
+            TranscriptionProvider offlineProvider = registry.getProvider(OfflineSpeechProvider.PROVIDER_ID);
+            if (offlineProvider == null || !offlineProvider.isAvailable()) {
+                offlineProvider = bestProvider;
+            }
+
+            if (offlineProvider != null) {
+                result = offlineProvider.transcribe(item.getId(), audioFile, options);
+            }
+        }
+
+        if (result != null && result.isSuccess() && result.getTranscript() != null) {
+            Transcript transcript = result.getTranscript();
+
+            // Save to SQLite transcripts table
+            db.saveTranscript(transcript);
+
+            // Register immutable transcript artifact in object storage (Phase 07 + Phase 08)
+            MediaStorageManager.getInstance(context).saveTranscriptArtifact(item.getId(), transcript.getFullText(), db);
+
+            // Update item caption if previously empty
+            if ((item.getCaption() == null || item.getCaption().trim().isEmpty())
+                    && transcript.getFullText() != null && !transcript.getFullText().isEmpty()) {
+                item.setCaption(transcript.getPreview(250));
+                db.update(item);
+            }
+
+            db.updateJobProgress(job.getId(), 100, "Transcription complete");
+            db.completeJob(job.getId());
+            db.updateStatus(item.getId(), "TRANSCRIPTION_COMPLETE");
+
+            Log.i(TAG, String.format(Locale.US,
+                    "[Job #%d] Transcription COMPLETED in %d ms | Item #%d | Length: %d chars | Segments: %d",
+                    job.getId(), (System.currentTimeMillis() - job.getStartedAt()), item.getId(),
+                    transcript.getFullText().length(), transcript.getSegments().size()));
+
+            notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_COMPLETED, "Transcription complete");
+        } else {
+            String errCode = result != null ? result.getErrorCode() : TranscriptionResult.ERROR_TRANSCRIPTION_FAILED;
+            String errMsg = result != null ? result.getErrorMessage() : "Transcription produced no result";
+            throw new Exception(errCode + ": " + errMsg);
+        }
     }
 
     public void retryJob(long jobId) {

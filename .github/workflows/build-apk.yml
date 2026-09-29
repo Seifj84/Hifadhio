@@ -1,4 +1,4 @@
-name: Build Hifadhio Phase 7 APK
+name: Build Hifadhio Phase 8 APK
 
 on:
   push:
@@ -43,47 +43,49 @@ jobs:
 
       - name: Prepare Release Artifacts
         run: |
-          mkdir -p release_records/phase_07_object_storage/v0.7.0/
-          cp android/app/build/outputs/apk/debug/app-debug.apk release_records/phase_07_object_storage/v0.7.0/Hifadhio-v0.7.0-phase7-debug.apk
-          cd release_records/phase_07_object_storage/v0.7.0/
-          zip -9 Hifadhio-v0.7.0-phase7-debug.zip Hifadhio-v0.7.0-phase7-debug.apk
-          sha256sum Hifadhio-v0.7.0-phase7-debug.apk > SHA256SUMS.txt
-          sha256sum Hifadhio-v0.7.0-phase7-debug.zip >> SHA256SUMS.txt
+          mkdir -p release_records/phase_08_transcription/v0.8.0/
+          cp android/app/build/outputs/apk/debug/app-debug.apk release_records/phase_08_transcription/v0.8.0/Hifadhio-v0.8.0-phase8-debug.apk
+          cd release_records/phase_08_transcription/v0.8.0/
+          zip -9 Hifadhio-v0.8.0-phase8-debug.zip Hifadhio-v0.8.0-phase8-debug.apk
+          sha256sum Hifadhio-v0.8.0-phase8-debug.apk > SHA256SUMS.txt
+          sha256sum Hifadhio-v0.8.0-phase8-debug.zip >> SHA256SUMS.txt
           cat SHA256SUMS.txt
           cd ../../..
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Hifadhio-v0.7.0-phase7-debug
+          name: Hifadhio-v0.8.0-phase8-debug
           path: |
-            release_records/phase_07_object_storage/v0.7.0/Hifadhio-v0.7.0-phase7-debug.apk
-            release_records/phase_07_object_storage/v0.7.0/Hifadhio-v0.7.0-phase7-debug.zip
+            release_records/phase_08_transcription/v0.8.0/Hifadhio-v0.8.0-phase8-debug.apk
+            release_records/phase_08_transcription/v0.8.0/Hifadhio-v0.8.0-phase8-debug.zip
           if-no-files-found: error
 
       - name: Create GitHub Release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.7.0-phase7
-          name: "Hifadhio v0.7.0 (Phase 7: Object Storage & Controlled Media Pipeline)"
+          tag_name: v0.8.0-phase8
+          name: "Hifadhio v0.8.0 (Phase 8: Audio Extraction & Transcription Pipeline)"
           body: |
-            ## Hifadhio v0.7.0 — Phase 7 Object Storage & Media Pipeline Release
+            ## Hifadhio v0.8.0 — Phase 8 Audio Extraction & Transcription Pipeline Release
 
             > **Save once. Find it when it matters.**
             > A NAS Digital Solutions product - engineered by SeifTech.
 
-            ### What's New in v0.7.0:
-            - **Controlled Private Object Storage (`MediaStorageManager`)**: Established partitioned internal app storage (`media/thumbnails/`, `media/temp/`, `media/audio/`, `media/artifacts/`) ensuring media is never stored as database blobs.
-            - **Database Schema v4 (`artifacts` table)**: Migrated local SQLite to Schema v4 with dedicated `artifacts` tracking table indexing storage paths, content URIs, MIME types, file sizes, SHA256 checksums, retention policies, and expiration timestamps.
-            - **Deterministic Naming & SHA256 Integrity**: Collision-free object naming (`item_{id}_thumb_{hash}.jpg`) and automatic SHA256 integrity verification.
-            - **Automated Thumbnail Caching**: `ProcessingJobManager` automatically downloads and caches remote thumbnails upon metadata extraction for instantaneous, offline-ready display in content detail.
-            - **Android FileProvider Scoped Access**: Integrated `androidx.core.content.FileProvider` (`com.seiftech.hifadhio.fileprovider`) with strict XML path mappings for secure temporary content URI access.
-            - **Automated Media Cleanup Worker (`MediaCleanupWorker`)**: Periodic sweeping of expired artifacts, orphaned disk files, stale temporary processing files, and thumbnail cache quota enforcement (50 MB quota).
-            - **Cascade Deletion**: Deleting content items automatically sweeps all associated media artifacts from disk and database.
-            - **User Storage Controls**: Profile tab displays real-time media cache utilization and provides a one-tap "Clean Cache" maintenance action.
+            ### What's New in v0.8.0:
+            - **Vendor-Neutral Transcription Provider Architecture (`TranscriptionProvider`, `TranscriptionRegistry`)**: Extensible provider registry isolating transcription vendors from domain logic (Master Spec ADR-007).
+            - **Database Schema v5 Migration (`transcripts` table)**: Migrated SQLite database with dedicated `transcripts` table indexing full text, detected language, provider ID, model, duration, segments JSON, confidence, and cost metrics.
+            - **True Timestamps Guarantee**: Adheres strictly to Master Spec §15.3 ("Never fabricate timestamps") - timestamps are recorded only when genuinely returned by subtitle or speech providers.
+            - **Native Subtitle & Caption Extractor (`SubtitlesExtractorProvider`, Priority 100)**: Zero-cost ($0.00) deterministic parser for WebVTT and SubRip (SRT) tracks with milli-precision timecodes and XML tag stripping.
+            - **On-Device Offline Speech Engine (`OfflineSpeechProvider`, Priority 80)**: Complete offline transcription capability respecting file duration and 25 MB file size quotas.
+            - **Cloud Whisper API Client (`CloudWhisperProvider`, Priority 50)**: OpenAI/Groq compliant Whisper integration with multipart streaming and exact duration/cost tracking ($0.006/min).
+            - **Audio Extraction & Lifecycle Subsystem (`AudioExtractor`)**: Validates audio format, size (<25 MB), and duration (<30 min), managing scratchpad files in `media/audio/`.
+            - **Automated Pipeline Chaining in `ProcessingJobManager`**: Automatically enqueues and runs transcription for video/audio items (YouTube, TikTok, Instagram Reels, Facebook Reels) upon metadata extraction.
+            - **Search-on-Detail in UI (`ContentDetailBottomSheet`)**: Live filtering and segment search within transcripts, clickable timestamp chips, one-tap copy transcript action, and manual transcribe trigger.
+            - **Library-wide Transcript Search**: Database search now queries inside extracted transcripts so any spoken phrase in a saved video is immediately retrievable.
           files: |
-            release_records/phase_07_object_storage/v0.7.0/Hifadhio-v0.7.0-phase7-debug.apk
-            release_records/phase_07_object_storage/v0.7.0/Hifadhio-v0.7.0-phase7-debug.zip
+            release_records/phase_08_transcription/v0.8.0/Hifadhio-v0.8.0-phase8-debug.apk
+            release_records/phase_08_transcription/v0.8.0/Hifadhio-v0.8.0-phase8-debug.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -15,6 +15,7 @@ public class ProcessingJob implements Serializable {
     public static final String TYPE_METADATA_FETCH = "METADATA_FETCH";
     public static final String TYPE_EXTRACT_CONTENT = "EXTRACT_CONTENT";
     public static final String TYPE_DUMMY_TEST = "DUMMY_TEST";
+    public static final String TYPE_TRANSCRIBE = "TRANSCRIBE";
 
     private long id;
     private long contentItemId;

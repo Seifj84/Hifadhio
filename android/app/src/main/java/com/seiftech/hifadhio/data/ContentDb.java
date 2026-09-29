@@ -8,17 +8,20 @@ import android.database.sqlite.SQLiteOpenHelper;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import com.seiftech.hifadhio.media.MediaArtifact;
+import com.seiftech.hifadhio.transcription.Transcript;
+import com.seiftech.hifadhio.transcription.TranscriptSegment;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ContentDb extends SQLiteOpenHelper {
     public static final String DB_NAME = "hifadhio.db";
-    public static final int DB_VERSION = 4;
+    public static final int DB_VERSION = 5;
     public static final String TABLE_ITEMS = "items";
     public static final String TABLE_COLLECTIONS = "collections";
     public static final String TABLE_JOBS = "processing_jobs";
     public static final String TABLE_EVENTS = "processing_events";
     public static final String TABLE_ARTIFACTS = "artifacts";
+    public static final String TABLE_TRANSCRIPTS = "transcripts";
 
     public static class CollectionStat {
         private final String name;
@@ -71,6 +74,7 @@ public class ContentDb extends SQLiteOpenHelper {
 
         createJobsTables(db);
         createArtifactsTable(db);
+        createTranscriptsTable(db);
     }
 
     @Override
@@ -92,6 +96,28 @@ public class ContentDb extends SQLiteOpenHelper {
         if (oldVersion < 4) {
             createArtifactsTable(db);
         }
+        if (oldVersion < 5) {
+            createTranscriptsTable(db);
+        }
+    }
+
+    private void createTranscriptsTable(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_TRANSCRIPTS + " ("
+                + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + "content_item_id INTEGER NOT NULL UNIQUE, "
+                + "full_text TEXT NOT NULL, "
+                + "language TEXT, "
+                + "provider_id TEXT NOT NULL, "
+                + "model TEXT, "
+                + "duration_ms INTEGER DEFAULT 0, "
+                + "segments_json TEXT, "
+                + "confidence REAL DEFAULT 1.0, "
+                + "cost_usd REAL DEFAULT 0.0, "
+                + "created_at INTEGER NOT NULL, "
+                + "updated_at INTEGER NOT NULL"
+                + ")");
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_transcripts_item ON " + TABLE_TRANSCRIPTS + " (content_item_id)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_transcripts_created ON " + TABLE_TRANSCRIPTS + " (created_at)");
     }
 
     private void createArtifactsTable(SQLiteDatabase db) {
@@ -192,6 +218,7 @@ public class ContentDb extends SQLiteOpenHelper {
         getWritableDatabase().delete(TABLE_JOBS, "content_item_id=?", new String[]{String.valueOf(id)});
         getWritableDatabase().delete(TABLE_EVENTS, "content_item_id=?", new String[]{String.valueOf(id)});
         deleteArtifactsForItem(id);
+        deleteTranscriptForItem(id);
         return getWritableDatabase().delete(TABLE_ITEMS, "id=?", new String[]{String.valueOf(id)});
     }
 
@@ -319,8 +346,8 @@ public class ContentDb extends SQLiteOpenHelper {
 
         if (query != null && !query.trim().isEmpty()) {
             String q = "%" + query.trim() + "%";
-            sql.append(" AND (title LIKE ? OR original_title LIKE ? OR caption LIKE ? OR notes LIKE ? OR tags LIKE ? OR url LIKE ? OR platform LIKE ? OR collection_name LIKE ?)");
-            for (int i = 0; i < 8; i++) {
+            sql.append(" AND (title LIKE ? OR original_title LIKE ? OR caption LIKE ? OR notes LIKE ? OR tags LIKE ? OR url LIKE ? OR platform LIKE ? OR collection_name LIKE ? OR id IN (SELECT content_item_id FROM " + TABLE_TRANSCRIPTS + " WHERE full_text LIKE ?))");
+            for (int i = 0; i < 9; i++) {
                 args.add(q);
             }
         }
@@ -1071,5 +1098,85 @@ public class ContentDb extends SQLiteOpenHelper {
         a.setExpiresAt(c.getLong(c.getColumnIndexOrThrow("expires_at")));
         a.setCreatedAt(c.getLong(c.getColumnIndexOrThrow("created_at")));
         return a;
+    }
+
+    // ==========================================
+    // Phase 08: Transcripts Storage API
+    // ==========================================
+
+    public long saveTranscript(Transcript transcript) {
+        if (transcript == null || transcript.getContentItemId() <= 0) {
+            return -1;
+        }
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put("content_item_id", transcript.getContentItemId());
+        cv.put("full_text", transcript.getFullText());
+        cv.put("language", transcript.getLanguage());
+        cv.put("provider_id", transcript.getProviderId());
+        cv.put("model", transcript.getModel());
+        cv.put("duration_ms", transcript.getDurationMs());
+        cv.put("segments_json", transcript.toSegmentsJson());
+        cv.put("confidence", transcript.getConfidence());
+        cv.put("cost_usd", transcript.getCostUsd());
+        long now = System.currentTimeMillis();
+        cv.put("created_at", transcript.getCreatedAt() > 0 ? transcript.getCreatedAt() : now);
+        cv.put("updated_at", now);
+
+        long id = db.insertWithOnConflict(TABLE_TRANSCRIPTS, null, cv, SQLiteDatabase.CONFLICT_REPLACE);
+        if (id > 0) {
+            transcript.setId(id);
+        }
+        return id;
+    }
+
+    public Transcript getTranscriptForItem(long contentItemId) {
+        Cursor c = getReadableDatabase().query(TABLE_TRANSCRIPTS, null, "content_item_id=?", new String[]{String.valueOf(contentItemId)}, null, null, null);
+        try {
+            if (c.moveToFirst()) {
+                return transcriptFromCursor(c);
+            }
+        } finally {
+            c.close();
+        }
+        return null;
+    }
+
+    public boolean hasTranscript(long contentItemId) {
+        Cursor c = getReadableDatabase().rawQuery("SELECT 1 FROM " + TABLE_TRANSCRIPTS + " WHERE content_item_id=? LIMIT 1", new String[]{String.valueOf(contentItemId)});
+        try {
+            return c.moveToFirst();
+        } finally {
+            c.close();
+        }
+    }
+
+    public int deleteTranscriptForItem(long contentItemId) {
+        return getWritableDatabase().delete(TABLE_TRANSCRIPTS, "content_item_id=?", new String[]{String.valueOf(contentItemId)});
+    }
+
+    private Transcript transcriptFromCursor(Cursor c) {
+        Transcript t = new Transcript();
+        t.setId(c.getLong(c.getColumnIndexOrThrow("id")));
+        t.setContentItemId(c.getLong(c.getColumnIndexOrThrow("content_item_id")));
+        t.setFullText(c.getString(c.getColumnIndexOrThrow("full_text")));
+        int langIdx = c.getColumnIndex("language");
+        if (langIdx >= 0) t.setLanguage(c.getString(langIdx));
+        t.setProviderId(c.getString(c.getColumnIndexOrThrow("provider_id")));
+        int modelIdx = c.getColumnIndex("model");
+        if (modelIdx >= 0) t.setModel(c.getString(modelIdx));
+        t.setDurationMs(c.getLong(c.getColumnIndexOrThrow("duration_ms")));
+        int segIdx = c.getColumnIndex("segments_json");
+        if (segIdx >= 0) {
+            t.setSegments(Transcript.parseSegmentsJson(c.getString(segIdx)));
+        }
+        int confIdx = c.getColumnIndex("confidence");
+        if (confIdx >= 0) t.setConfidence(c.getDouble(confIdx));
+        int costIdx = c.getColumnIndex("cost_usd");
+        if (costIdx >= 0) t.setCostUsd(c.getDouble(costIdx));
+        t.setCreatedAt(c.getLong(c.getColumnIndexOrThrow("created_at")));
+        int updIdx = c.getColumnIndex("updated_at");
+        if (updIdx >= 0) t.setUpdatedAt(c.getLong(updIdx));
+        return t;
     }
 }
