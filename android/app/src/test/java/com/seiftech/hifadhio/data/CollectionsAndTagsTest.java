@@ -24,9 +24,10 @@ public class CollectionsAndTagsTest {
     public void testDisplayTitleFallbackHierarchy() {
         ContentItem item = new ContentItem();
         item.setUrl("https://instagram.com/reel/abcde123");
+        item.setPlatform("Instagram");
 
-        // 1. When neither title nor originalTitle is set -> URL fallback
-        assertEquals("instagram.com/reel/abcde123", item.getDisplayTitle());
+        // 1. When neither title nor originalTitle is set -> intelligent platform fallback
+        assertEquals("Instagram Reel", item.getDisplayTitle());
 
         // 2. When only originalTitle is set -> originalTitle
         item.setOriginalTitle("Extracted Reel Caption");
