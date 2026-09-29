@@ -142,6 +142,9 @@ public class SaveLinkBottomSheet extends BottomSheetDialogFragment {
             String tags = etTags.getText() != null ? etTags.getText().toString().trim() : "";
 
             if (editItem != null) {
+                if (editItem.getOriginalTitle() == null || editItem.getOriginalTitle().isEmpty()) {
+                    editItem.setOriginalTitle(editItem.getTitle() != null && !editItem.getTitle().isEmpty() ? editItem.getTitle() : title);
+                }
                 editItem.setUrl(cleanUrl);
                 editItem.setCanonicalUrl(canonical);
                 editItem.setPlatform(platform);
@@ -151,9 +154,13 @@ public class SaveLinkBottomSheet extends BottomSheetDialogFragment {
                 editItem.setCollectionName(collection);
                 editItem.setTags(tags);
                 db.update(editItem);
+                db.createCollection(collection);
                 Toast.makeText(requireContext(), "Saved changes to Hifadhio", Toast.LENGTH_SHORT).show();
                 if (onSavedListener != null) onSavedListener.onSaved(editItem);
             } else if (detectedDuplicate != null) {
+                if (detectedDuplicate.getOriginalTitle() == null || detectedDuplicate.getOriginalTitle().isEmpty()) {
+                    detectedDuplicate.setOriginalTitle(detectedDuplicate.getTitle());
+                }
                 detectedDuplicate.setUrl(cleanUrl);
                 detectedDuplicate.setCanonicalUrl(canonical);
                 detectedDuplicate.setPlatform(platform);
@@ -163,6 +170,7 @@ public class SaveLinkBottomSheet extends BottomSheetDialogFragment {
                 if (!collection.isEmpty()) detectedDuplicate.setCollectionName(collection);
                 if (!tags.isEmpty()) detectedDuplicate.setTags(tags);
                 db.update(detectedDuplicate);
+                db.createCollection(collection);
                 Toast.makeText(requireContext(), "Updated existing item in Hifadhio", Toast.LENGTH_SHORT).show();
                 if (onSavedListener != null) onSavedListener.onSaved(detectedDuplicate);
             } else {
@@ -171,12 +179,14 @@ public class SaveLinkBottomSheet extends BottomSheetDialogFragment {
                 item.setCanonicalUrl(canonical);
                 item.setPlatform(platform);
                 item.setTitle(title);
+                item.setOriginalTitle(title);
                 item.setCaption(caption);
                 item.setNotes(notes);
                 item.setCollectionName(collection);
                 item.setTags(tags);
                 item.setStatus("SAVED");
                 db.insert(item);
+                db.createCollection(collection);
                 Toast.makeText(requireContext(), "Link captured to Hifadhio!", Toast.LENGTH_SHORT).show();
                 if (onSavedListener != null) onSavedListener.onSaved(item);
             }

@@ -25,6 +25,18 @@
         <item name="android:textColorSecondary">@color/text_secondary</item>
     </style>
 
+    <!-- Toolbar Title & Subtitle Styling -->
+    <style name="TextAppearance.Hifadhio.Toolbar.Title" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textSize">20sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <style name="TextAppearance.Hifadhio.Toolbar.Subtitle" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/mint</item>
+    </style>
+
     <style name="Theme.Hifadhio.BottomSheetDialog" parent="ThemeOverlay.Material3.BottomSheetDialog">
         <item name="bottomSheetStyle">@style/CustomBottomSheetStyle</item>
     </style>

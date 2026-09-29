@@ -8,6 +8,7 @@ public class ContentItem implements Serializable {
     private String canonicalUrl = "";
     private String platform = "Web";
     private String title = "";
+    private String originalTitle = "";
     private String caption = "";
     private String thumbnailUrl = "";
     private String notes = "";
@@ -42,6 +43,9 @@ public class ContentItem implements Serializable {
     public String getTitle() { return title == null ? "" : title; }
     public void setTitle(String title) { this.title = title; }
 
+    public String getOriginalTitle() { return originalTitle == null ? "" : originalTitle; }
+    public void setOriginalTitle(String originalTitle) { this.originalTitle = originalTitle; }
+
     public String getCaption() { return caption == null ? "" : caption; }
     public void setCaption(String caption) { this.caption = caption; }
 
@@ -72,6 +76,9 @@ public class ContentItem implements Serializable {
     public String getDisplayTitle() {
         if (title != null && !title.trim().isEmpty()) {
             return title.trim();
+        }
+        if (originalTitle != null && !originalTitle.trim().isEmpty()) {
+            return originalTitle.trim();
         }
         if (url != null && !url.trim().isEmpty()) {
             String clean = url.replace("https://", "").replace("http://", "").replace("www.", "");

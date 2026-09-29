@@ -28,6 +28,7 @@ import java.util.List;
 public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ViewHolder> {
 
     public interface OnItemActionListener {
+        void onViewDetail(ContentItem item);
         void onEdit(ContentItem item);
         void onDelete(ContentItem item);
         void onDataChanged();
@@ -112,7 +113,7 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ViewHold
 
         h.itemView.setOnClickListener(v -> {
             if (listener != null) {
-                listener.onEdit(item);
+                listener.onViewDetail(item);
             }
         });
     }
@@ -127,7 +128,10 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ViewHold
         popup.inflate(R.menu.card_item_menu);
         popup.setOnMenuItemClickListener(menuItem -> {
             int id = menuItem.getItemId();
-            if (id == R.id.action_open) {
+            if (id == R.id.action_view_detail) {
+                if (listener != null) listener.onViewDetail(item);
+                return true;
+            } else if (id == R.id.action_open) {
                 openUrl(item.getUrl());
                 return true;
             } else if (id == R.id.action_share) {

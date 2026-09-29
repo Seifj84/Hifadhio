@@ -17,10 +17,17 @@
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
+            android:layout_height="wrap_content"
+            android:minHeight="?attr/actionBarSize"
+            android:paddingStart="4dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="10dp"
             app:title="Hifadhio"
+            app:titleTextAppearance="@style/TextAppearance.Hifadhio.Toolbar.Title"
             app:titleTextColor="@color/white"
             app:subtitle="Save once. Find it when it matters."
+            app:subtitleTextAppearance="@style/TextAppearance.Hifadhio.Toolbar.Subtitle"
             app:subtitleTextColor="@color/mint" />
     </com.google.android.material.appbar.AppBarLayout>
 

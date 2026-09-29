@@ -114,6 +114,29 @@ public class HomeFragment extends Fragment implements ContentAdapter.OnItemActio
     }
 
     @Override
+    public void onViewDetail(ContentItem item) {
+        ContentDetailBottomSheet sheet = ContentDetailBottomSheet.newInstance(item);
+        sheet.setOnContentActionListener(new ContentDetailBottomSheet.OnContentActionListener() {
+            @Override
+            public void onContentUpdated(ContentItem item) {
+                refresh();
+                if (getActivity() instanceof MainActivity) {
+                    ((MainActivity) getActivity()).updateInboxBadge();
+                }
+            }
+
+            @Override
+            public void onContentDeleted(ContentItem item) {
+                refresh();
+                if (getActivity() instanceof MainActivity) {
+                    ((MainActivity) getActivity()).updateInboxBadge();
+                }
+            }
+        });
+        sheet.show(getParentFragmentManager(), "detail_sheet_home");
+    }
+
+    @Override
     public void onEdit(ContentItem item) {
         SaveLinkBottomSheet sheet = SaveLinkBottomSheet.newInstance(item);
         sheet.setOnSavedListener(savedItem -> refresh());

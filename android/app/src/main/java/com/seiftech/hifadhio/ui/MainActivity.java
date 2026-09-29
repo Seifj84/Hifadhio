@@ -7,7 +7,11 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
+import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.badge.BadgeDrawable;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
@@ -35,6 +39,18 @@ public class MainActivity extends AppCompatActivity {
         db = new ContentDb(this);
         bottomNav = findViewById(R.id.bottom_nav);
         fabAdd = findViewById(R.id.fab_add);
+
+        // Apply system status bar & cutout insets to AppBarLayout so toolbar never overlaps clock/notch
+        AppBarLayout appBar = findViewById(R.id.app_bar);
+        if (appBar != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(appBar, (v, windowInsets) -> {
+                Insets insets = windowInsets.getInsets(
+                        WindowInsetsCompat.Type.statusBars() | WindowInsetsCompat.Type.displayCutout()
+                );
+                v.setPadding(0, insets.top, 0, 0);
+                return windowInsets;
+            });
+        }
 
         // Dynamically adjust container and FAB margin based on measured BottomNav height + insets
         bottomNav.post(() -> {

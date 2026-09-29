@@ -1,4 +1,4 @@
-name: Build Hifadhio Phase 2 APK
+name: Build Hifadhio Phase 3 APK
 
 on:
   push:
@@ -43,46 +43,48 @@ jobs:
 
       - name: Prepare Release Artifacts
         run: |
-          mkdir -p release_records/phase_02_capture_triage/v0.2.0/
-          cp android/app/build/outputs/apk/debug/app-debug.apk release_records/phase_02_capture_triage/v0.2.0/Hifadhio-v0.2.0-phase2-debug.apk
-          cd release_records/phase_02_capture_triage/v0.2.0/
-          zip -9 Hifadhio-v0.2.0-phase2-debug.zip Hifadhio-v0.2.0-phase2-debug.apk
-          sha256sum Hifadhio-v0.2.0-phase2-debug.apk > SHA256SUMS.txt
-          sha256sum Hifadhio-v0.2.0-phase2-debug.zip >> SHA256SUMS.txt
+          mkdir -p release_records/phase_03_collections_library/v0.3.0/
+          cp android/app/build/outputs/apk/debug/app-debug.apk release_records/phase_03_collections_library/v0.3.0/Hifadhio-v0.3.0-phase3-debug.apk
+          cd release_records/phase_03_collections_library/v0.3.0/
+          zip -9 Hifadhio-v0.3.0-phase3-debug.zip Hifadhio-v0.3.0-phase3-debug.apk
+          sha256sum Hifadhio-v0.3.0-phase3-debug.apk > SHA256SUMS.txt
+          sha256sum Hifadhio-v0.3.0-phase3-debug.zip >> SHA256SUMS.txt
           cat SHA256SUMS.txt
           cd ../../..
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Hifadhio-v0.2.0-phase2-debug
+          name: Hifadhio-v0.3.0-phase3-debug
           path: |
-            release_records/phase_02_capture_triage/v0.2.0/Hifadhio-v0.2.0-phase2-debug.apk
-            release_records/phase_02_capture_triage/v0.2.0/Hifadhio-v0.2.0-phase2-debug.zip
+            release_records/phase_03_collections_library/v0.3.0/Hifadhio-v0.3.0-phase3-debug.apk
+            release_records/phase_03_collections_library/v0.3.0/Hifadhio-v0.3.0-phase3-debug.zip
           if-no-files-found: error
 
       - name: Create GitHub Release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.2.0-phase2
-          name: "Hifadhio v0.2.0 (Phase 2 Capture MVP & Inbox Triage)"
+          tag_name: v0.3.0-phase3
+          name: "Hifadhio v0.3.0 (Phase 3 Collections, Tags and Library)"
           body: |
-            ## Hifadhio v0.2.0 — Phase 2 Capture MVP & Inbox Triage
+            ## Hifadhio v0.3.0 — Phase 3 Collections, Tags and Library
 
             > **Save once. Find it when it matters.**
             > A NAS Digital Solutions product - engineered by SeifTech.
 
-            ### What's New in Phase 2:
-            - **Real-Time Duplicate Detection**: Automatically identifies previously saved links by canonical URL matching, displays a prominent duplicate banner, pre-fills previous metadata, and seamlessly updates existing records.
-            - **Live Inbox Badge Counter**: Real-time counter badge on the Bottom Navigation `Inbox` tab, indicating items awaiting triage and organization.
-            - **Quick "Move to Collection" Triage**: Rapidly assign items to existing collections or create new collections directly from content cards and overflow menus.
-            - **Inbox Triage Header & Inbox Zero**: Visual triage progress header and celebrated "Inbox Zero" empty state when all content is neatly organized.
-            - **Saved Confirmation Experience**: Material 3 confirmation snackbar with direct "View in Inbox" shortcut.
-            - **Unit Tests**: Full canonical URL normalization and duplicate matching test suite.
+            ### What's New in Phase 3:
+            - **Responsive Header & Status Bar Padding**: Applied dynamic window insets listeners for status bar & camera cutouts to ensure the app header, title, and subtitle sit comfortably below the clock and icons on every screen.
+            - **Complete Collection CRUD**: Create new custom collections, rename collections, and delete collections (with safe reassignment of items back to Inbox).
+            - **Collections with Live Item Counts**: Real-time item badges on every collection chip in the Library.
+            - **Rich Content Detail Screen**: Tapping any card opens a dedicated bottom sheet displaying full metadata, original extracted title vs customized title, personal notes with fast inline editing, tag chips, and action shortcuts.
+            - **Favorites Filtering**: Filter Library instantly by starred items with a dedicated `★ Favorites` view.
+            - **Manual Tag Indexing & Filtering**: Full support for personal `#tags`, tag chips in Library, and tag editing.
+            - **Title Override Protection**: Custom title editing preserves the original extracted title (`original_title`).
+            - **Unit Tests**: Full test suite for URL normalization, duplicate matching, title override hierarchy, tag formatting, and collection validation.
           files: |
-            release_records/phase_02_capture_triage/v0.2.0/Hifadhio-v0.2.0-phase2-debug.apk
-            release_records/phase_02_capture_triage/v0.2.0/Hifadhio-v0.2.0-phase2-debug.zip
+            release_records/phase_03_collections_library/v0.3.0/Hifadhio-v0.3.0-phase3-debug.apk
+            release_records/phase_03_collections_library/v0.3.0/Hifadhio-v0.3.0-phase3-debug.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
