@@ -303,7 +303,7 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
                 tvJobMessage.setText("Scheduled for analysis...");
                 if (btnRetryJob != null) btnRetryJob.setVisibility(View.GONE);
             } else { // CLAIMED or RUNNING
-                int progress = job.getProgress();
+                int progress = job.getProgressPercent();
                 if (progress < 30) {
                     tvJobStatus.setText("Preparing link");
                     tvJobMessage.setText("Checking page format...");

@@ -71,6 +71,8 @@ public class ProcessingJob implements Serializable {
 
     public int getProgressPercent() { return progressPercent; }
     public void setProgressPercent(int progressPercent) { this.progressPercent = progressPercent; }
+    public int getProgress() { return progressPercent; }
+    public void setProgress(int progress) { this.progressPercent = progress; }
 
     public String getStageMessage() { return stageMessage == null ? "" : stageMessage; }
     public void setStageMessage(String stageMessage) { this.stageMessage = stageMessage; }
