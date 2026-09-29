@@ -1,10 +1,13 @@
 # Next Action
 
-Phase: Phase 04 - Processing Job Framework
+Phase: Transitioning to Phase 05 - Adapter Framework + Generic Web Metadata
 
-1. Implement `ProcessingJob.java` and `ProcessingEvent.java` domain models.
-2. Upgrade `ContentDb.java` to schema version 3 with `processing_jobs` and `processing_events` tables and indexes.
-3. Implement `ProcessingJobManager.java` with worker lease/claim, exponential backoff retry, stale recovery, and event logging.
-4. Integrate processing status indicators in `ContentAdapter` and the event audit timeline + retry action in `ContentDetailBottomSheet`.
-5. Write unit tests in `ProcessingJobTest.java`.
-6. Bump version to `0.4.0-phase4`, push to GitHub, and build release APK.
+1. User testing and device verification of `Hifadhio-v0.4.0-phase4-debug.apk`:
+   - Verify job creation on link capture.
+   - Verify processing status indicator display on cards (`QUEUED`, `RUNNING`, `READY`, `FAILED`).
+   - Verify audit event timeline and "Retry Processing" action inside Content Detail bottom sheet.
+2. Prepare Phase 05 plan per Master Spec Section 1109-1124:
+   - Design `ContentAdapterRegistry` and `ContentExtractorAdapter` interface.
+   - Implement `GenericWebAdapter` with OpenGraph metadata extraction (`og:title`, `og:description`, `og:image`, canonical URL).
+   - Hook adapter extraction into `ProcessingJobManager` worker loop.
+   - Add unit tests with HTML/OpenGraph fixtures.
