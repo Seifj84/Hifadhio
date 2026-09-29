@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <files-path name="media" path="media/" />
+    <files-path name="thumbnails" path="media/thumbnails/" />
+    <files-path name="temp" path="media/temp/" />
+    <files-path name="audio" path="media/audio/" />
+    <files-path name="artifacts" path="media/artifacts/" />
+</paths>

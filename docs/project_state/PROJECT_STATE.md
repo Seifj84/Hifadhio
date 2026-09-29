@@ -19,11 +19,11 @@ Latest migration: 003_processing_jobs_and_events
 - Phase 06 — Official Platform Metadata Integrations: Native platform adapters for YouTube (`YouTubeAdapter`, Priority 90), TikTok (`TikTokAdapter`, Priority 85), Instagram (`InstagramAdapter`, Priority 80), Facebook (`FacebookAdapter`, Priority 80), Reddit (`RedditAdapter`, Priority 75), and X/Twitter (`XAdapter`, Priority 75) with official oEmbed integration, video ID thumbnail parsing, and guaranteed fallback metadata.
 
 ## Current phase
-Phase 06 — Official Platform Metadata Integrations (COMPLETED)
-Next: Phase 07 — Object Storage and Controlled Media Pipeline
+Phase 07 — Object Storage and Controlled Media Pipeline
+Next: Phase 08 — Transcription Pipeline
 
 ## Current status
-READY_FOR_ACCEPTANCE
+IN_PROGRESS
 
 ## Current implemented capabilities
 - Android native share target for `ACTION_SEND` (`text/plain`)

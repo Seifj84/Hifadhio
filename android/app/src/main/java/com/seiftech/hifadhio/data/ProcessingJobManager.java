@@ -7,6 +7,7 @@ import android.util.Log;
 import com.seiftech.hifadhio.adapter.ContentAdapterRegistry;
 import com.seiftech.hifadhio.adapter.ContentExtractorAdapter;
 import com.seiftech.hifadhio.adapter.ExtractedMetadata;
+import com.seiftech.hifadhio.media.MediaStorageManager;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -184,6 +185,12 @@ public class ProcessingJobManager {
             }
             if (meta.getThumbnailUrl() != null && !meta.getThumbnailUrl().isEmpty()) {
                 item.setThumbnailUrl(meta.getThumbnailUrl());
+                // Controlled Media Pipeline (Phase 07): Cache thumbnail to private object storage
+                try {
+                    MediaStorageManager.getInstance(context).cacheThumbnail(item.getId(), meta.getThumbnailUrl(), db);
+                } catch (Exception e) {
+                    Log.w(TAG, "Thumbnail caching non-fatal error: " + e.getMessage());
+                }
             }
             if (meta.getCanonicalUrl() != null && !meta.getCanonicalUrl().isEmpty()) {
                 item.setCanonicalUrl(meta.getCanonicalUrl());

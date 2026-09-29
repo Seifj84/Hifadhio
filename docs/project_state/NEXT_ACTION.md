@@ -1,13 +1,12 @@
 # Next Action
 
-Phase: Transitioning to Phase 07 — Object Storage and Controlled Media Pipeline
+Phase: Phase 07 — Object Storage and Controlled Media Pipeline
 
-1. User testing and device verification of `Hifadhio-v0.6.0-phase6-debug.apk`:
-   - Test saving YouTube videos (watch URLs, shorts, and youtu.be shortlinks). Verify official title, channel name, and thumbnail extraction.
-   - Test saving TikTok links. Verify title/caption and creator handle extraction.
-   - Test saving Instagram Reels and posts. Verify clean canonicalization and structured fallback.
-   - Test saving Reddit discussion links and X/Twitter posts.
-2. Prepare Phase 07 per Master Spec Section 1155-1170:
-   - Private object storage design for media caching.
-   - Media retention lifecycle and temporary working files.
-   - Item media-access policy and cleanup worker.
+Current Execution:
+1. WU-01: Update `ContentDb.java` to Schema v4 (add `artifacts` table and query methods).
+2. WU-02: Implement `MediaArtifact.java`, `MediaRetentionPolicy.java`, and `MediaStorageManager.java`.
+3. WU-03: Create `res/xml/file_paths.xml` and register `FileProvider` in `AndroidManifest.xml`.
+4. WU-04: Implement `MediaCleanupWorker.java` for lifecycle management, quota enforcement, and orphan sweeps.
+5. WU-05: Integrate thumbnail caching into `ProcessingJobManager.java` and UI.
+6. WU-06: Create `MediaStorageManagerTest.java` and `MediaCleanupWorkerTest.java`.
+7. WU-07: Version bump to `0.7.0-phase7` (versionCode 7), push to GitHub, verify CI/CD, and package release.

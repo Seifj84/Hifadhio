@@ -96,6 +96,26 @@
             android:lineSpacingExtra="2dp"
             android:visibility="gone" />
 
+        <!-- Cached Thumbnail / Preview Image (Phase 07 Object Storage) -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_detail_thumbnail"
+            android:layout_width="match_parent"
+            android:layout_height="180dp"
+            android:layout_marginTop="10dp"
+            android:visibility="gone"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="@color/divider">
+
+            <ImageView
+                android:id="@+id/iv_detail_thumbnail"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:contentDescription="Thumbnail Preview" />
+        </com.google.android.material.card.MaterialCardView>
+
         <!-- Collection Chip & Status -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -355,6 +375,15 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
                     android:textColor="@color/danger"
+                    android:textSize="11sp"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/tv_tech_storage_info"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="@color/text_secondary"
                     android:textSize="11sp"
                     android:visibility="gone" />
 

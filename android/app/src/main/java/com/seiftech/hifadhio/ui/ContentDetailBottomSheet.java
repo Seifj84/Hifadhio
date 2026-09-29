@@ -31,8 +31,13 @@ import com.seiftech.hifadhio.data.ProcessingEvent;
 import com.seiftech.hifadhio.data.ProcessingJob;
 import com.seiftech.hifadhio.data.ProcessingJobManager;
 import com.seiftech.hifadhio.data.TimeUtils;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import android.widget.LinearLayout;
+import com.seiftech.hifadhio.media.MediaArtifact;
+import com.seiftech.hifadhio.media.MediaStorageManager;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,7 +56,9 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
 
     private TextView tvPlatform, tvDate, tvTitle, tvOriginalTitle, tvCaption, tvStatus, tvUrl, tvNotes;
     private TextView tvJobStatus, tvJobMessage;
-    private TextView btnToggleTechDetails, tvTechWorkerInfo, tvTechErrorInfo;
+    private TextView btnToggleTechDetails, tvTechWorkerInfo, tvTechErrorInfo, tvTechStorageInfo;
+    private View cardThumbnail;
+    private ImageView ivThumbnail;
     private ImageView btnFav, btnClose, btnCopyUrl;
     private Chip chipCollection;
     private ChipGroup chipGroupTags;
@@ -123,6 +130,9 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
         btnToggleTechDetails = view.findViewById(R.id.btn_toggle_tech_details);
         tvTechWorkerInfo = view.findViewById(R.id.tv_tech_worker_info);
         tvTechErrorInfo = view.findViewById(R.id.tv_tech_error_info);
+        tvTechStorageInfo = view.findViewById(R.id.tv_tech_storage_info);
+        cardThumbnail = view.findViewById(R.id.card_detail_thumbnail);
+        ivThumbnail = view.findViewById(R.id.iv_detail_thumbnail);
 
         if (btnToggleTechDetails != null && layoutTechDetails != null) {
             btnToggleTechDetails.setOnClickListener(v -> {
@@ -235,6 +245,26 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
             tvCaption.setText(item.getCaption().trim());
         } else {
             tvCaption.setVisibility(View.GONE);
+        }
+
+        // Thumbnail preview loading from local object storage (Phase 07)
+        if (cardThumbnail != null && ivThumbnail != null) {
+            File thumbFile = MediaStorageManager.getInstance(requireContext()).getThumbnailFile(item.getId(), db);
+            if (thumbFile != null && thumbFile.exists() && thumbFile.length() > 0) {
+                try {
+                    Bitmap bmp = BitmapFactory.decodeFile(thumbFile.getAbsolutePath());
+                    if (bmp != null) {
+                        ivThumbnail.setImageBitmap(bmp);
+                        cardThumbnail.setVisibility(View.VISIBLE);
+                    } else {
+                        cardThumbnail.setVisibility(View.GONE);
+                    }
+                } catch (Exception e) {
+                    cardThumbnail.setVisibility(View.GONE);
+                }
+            } else {
+                cardThumbnail.setVisibility(View.GONE);
+            }
         }
 
         chipCollection.setText(item.getCollectionName());
@@ -351,6 +381,20 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
                 tvTechErrorInfo.setText("Diagnostic: " + job.getSanitizedErrorMessage());
             } else {
                 tvTechErrorInfo.setVisibility(View.GONE);
+            }
+        }
+
+        if (tvTechStorageInfo != null) {
+            MediaArtifact thumbArt = db.getArtifact(item.getId(), MediaArtifact.TYPE_THUMBNAIL);
+            if (thumbArt != null && thumbArt.getStoragePath() != null) {
+                tvTechStorageInfo.setVisibility(View.VISIBLE);
+                String shaShort = thumbArt.getSha256() != null && thumbArt.getSha256().length() >= 10
+                        ? thumbArt.getSha256().substring(0, 10) : "none";
+                tvTechStorageInfo.setText("Media Object: " + thumbArt.getStoragePath()
+                        + "\nSize: " + thumbArt.getFileSizeBytes() + " bytes • SHA256: " + shaShort
+                        + " • Policy: " + thumbArt.getRetentionPolicy());
+            } else {
+                tvTechStorageInfo.setVisibility(View.GONE);
             }
         }
 

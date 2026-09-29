@@ -2,6 +2,7 @@ package com.seiftech.hifadhio.ui;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.format.Formatter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +14,8 @@ import androidx.fragment.app.Fragment;
 import com.google.android.material.button.MaterialButton;
 import com.seiftech.hifadhio.R;
 import com.seiftech.hifadhio.data.ContentDb;
+import com.seiftech.hifadhio.media.MediaCleanupWorker;
+import com.seiftech.hifadhio.media.MediaStorageManager;
 
 public class ProfileFragment extends Fragment {
 
@@ -36,6 +39,7 @@ public class ProfileFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         tvStats = view.findViewById(R.id.tv_profile_stats);
         MaterialButton btnExport = view.findViewById(R.id.btn_export_json);
+        MaterialButton btnCleanCache = view.findViewById(R.id.btn_clean_cache);
 
         btnExport.setOnClickListener(v -> {
             String json = db.exportToJson();
@@ -45,6 +49,17 @@ public class ProfileFragment extends Fragment {
             send.putExtra(Intent.EXTRA_TEXT, json);
             startActivity(Intent.createChooser(send, "Export Hifadhio Library"));
         });
+
+        if (btnCleanCache != null) {
+            btnCleanCache.setOnClickListener(v -> {
+                MediaStorageManager sm = MediaStorageManager.getInstance(requireContext());
+                MediaCleanupWorker worker = new MediaCleanupWorker(requireContext(), sm, db);
+                MediaCleanupWorker.CleanupReport report = worker.runCleanupSweep();
+                String freedStr = Formatter.formatFileSize(requireContext(), report.bytesFreed);
+                Toast.makeText(requireContext(), "Cleaned cache: " + freedStr + " freed", Toast.LENGTH_SHORT).show();
+                updateStats();
+            });
+        }
 
         updateStats();
     }
@@ -56,9 +71,11 @@ public class ProfileFragment extends Fragment {
     }
 
     private void updateStats() {
-        if (db == null || tvStats == null) return;
+        if (db == null || tvStats == null || getContext() == null) return;
         int count = db.getTotalCount();
         int collectionsCount = db.getCollections().size();
-        tvStats.setText(count + " saved items across " + collectionsCount + " collections • Local SQLite Active");
+        long mediaBytes = MediaStorageManager.getInstance(requireContext()).getTotalMediaStorageBytes();
+        String mediaStr = Formatter.formatFileSize(requireContext(), mediaBytes);
+        tvStats.setText(count + " saved items • " + collectionsCount + " collections • " + mediaStr + " media cache");
     }
 }

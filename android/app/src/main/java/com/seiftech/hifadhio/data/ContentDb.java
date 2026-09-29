@@ -7,16 +7,18 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import com.seiftech.hifadhio.media.MediaArtifact;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ContentDb extends SQLiteOpenHelper {
     public static final String DB_NAME = "hifadhio.db";
-    public static final int DB_VERSION = 3;
+    public static final int DB_VERSION = 4;
     public static final String TABLE_ITEMS = "items";
     public static final String TABLE_COLLECTIONS = "collections";
     public static final String TABLE_JOBS = "processing_jobs";
     public static final String TABLE_EVENTS = "processing_events";
+    public static final String TABLE_ARTIFACTS = "artifacts";
 
     public static class CollectionStat {
         private final String name;
@@ -68,6 +70,7 @@ public class ContentDb extends SQLiteOpenHelper {
         seedDefaultCollections(db);
 
         createJobsTables(db);
+        createArtifactsTable(db);
     }
 
     @Override
@@ -86,6 +89,28 @@ public class ContentDb extends SQLiteOpenHelper {
         if (oldVersion < 3) {
             createJobsTables(db);
         }
+        if (oldVersion < 4) {
+            createArtifactsTable(db);
+        }
+    }
+
+    private void createArtifactsTable(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_ARTIFACTS + " ("
+                + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + "content_item_id INTEGER NOT NULL, "
+                + "artifact_type TEXT NOT NULL, "
+                + "storage_path TEXT NOT NULL, "
+                + "content_uri TEXT, "
+                + "mime_type TEXT, "
+                + "file_size_bytes INTEGER DEFAULT 0, "
+                + "sha256 TEXT, "
+                + "retention_policy TEXT DEFAULT 'CACHE', "
+                + "expires_at INTEGER DEFAULT 0, "
+                + "created_at INTEGER NOT NULL"
+                + ")");
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_art_item ON " + TABLE_ARTIFACTS + " (content_item_id)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_art_type ON " + TABLE_ARTIFACTS + " (artifact_type)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_art_expires ON " + TABLE_ARTIFACTS + " (expires_at)");
     }
 
     private void createJobsTables(SQLiteDatabase db) {
@@ -164,6 +189,9 @@ public class ContentDb extends SQLiteOpenHelper {
     }
 
     public int delete(long id) {
+        getWritableDatabase().delete(TABLE_JOBS, "content_item_id=?", new String[]{String.valueOf(id)});
+        getWritableDatabase().delete(TABLE_EVENTS, "content_item_id=?", new String[]{String.valueOf(id)});
+        deleteArtifactsForItem(id);
         return getWritableDatabase().delete(TABLE_ITEMS, "id=?", new String[]{String.valueOf(id)});
     }
 
@@ -916,5 +944,132 @@ public class ContentDb extends SQLiteOpenHelper {
         item.setSavedAt(c.getLong(c.getColumnIndexOrThrow("saved_at")));
         item.setUpdatedAt(c.getLong(c.getColumnIndexOrThrow("updated_at")));
         return item;
+    }
+
+    // --- Artifacts Table Operations (Master Spec Phase 07 / Section 13.1) ---
+
+    public long insertArtifact(MediaArtifact artifact) {
+        if (artifact == null) return -1;
+        ContentValues cv = new ContentValues();
+        cv.put("content_item_id", artifact.getContentItemId());
+        cv.put("artifact_type", artifact.getArtifactType());
+        cv.put("storage_path", artifact.getStoragePath());
+        cv.put("content_uri", artifact.getContentUri());
+        cv.put("mime_type", artifact.getMimeType());
+        cv.put("file_size_bytes", artifact.getFileSizeBytes());
+        cv.put("sha256", artifact.getSha256());
+        cv.put("retention_policy", artifact.getRetentionPolicy());
+        cv.put("expires_at", artifact.getExpiresAt());
+        cv.put("created_at", artifact.getCreatedAt());
+        long id = getWritableDatabase().insert(TABLE_ARTIFACTS, null, cv);
+        artifact.setId(id);
+        return id;
+    }
+
+    public List<MediaArtifact> getArtifactsForItem(long itemId) {
+        List<MediaArtifact> list = new ArrayList<>();
+        Cursor c = getReadableDatabase().query(TABLE_ARTIFACTS, null, "content_item_id=?",
+                new String[]{String.valueOf(itemId)}, null, null, "created_at ASC");
+        if (c != null) {
+            while (c.moveToNext()) {
+                list.add(artifactFromCursor(c));
+            }
+            c.close();
+        }
+        return list;
+    }
+
+    public MediaArtifact getArtifact(long itemId, String type) {
+        MediaArtifact artifact = null;
+        Cursor c = getReadableDatabase().query(TABLE_ARTIFACTS, null, "content_item_id=? AND artifact_type=?",
+                new String[]{String.valueOf(itemId), type}, null, null, "created_at DESC", "1");
+        if (c != null) {
+            if (c.moveToFirst()) {
+                artifact = artifactFromCursor(c);
+            }
+            c.close();
+        }
+        return artifact;
+    }
+
+    public List<MediaArtifact> getExpiredArtifacts(long now) {
+        List<MediaArtifact> list = new ArrayList<>();
+        Cursor c = getReadableDatabase().query(TABLE_ARTIFACTS, null, "expires_at > 0 AND expires_at <= ?",
+                new String[]{String.valueOf(now)}, null, null, "expires_at ASC");
+        if (c != null) {
+            while (c.moveToNext()) {
+                list.add(artifactFromCursor(c));
+            }
+            c.close();
+        }
+        return list;
+    }
+
+    public int deleteArtifact(long id) {
+        return getWritableDatabase().delete(TABLE_ARTIFACTS, "id=?", new String[]{String.valueOf(id)});
+    }
+
+    public int deleteArtifactsForItem(long itemId) {
+        List<MediaArtifact> list = getArtifactsForItem(itemId);
+        for (MediaArtifact art : list) {
+            if (art.getStoragePath() != null) {
+                try {
+                    java.io.File f = new java.io.File(art.getStoragePath());
+                    if (f.exists()) {
+                        f.delete();
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
+        return getWritableDatabase().delete(TABLE_ARTIFACTS, "content_item_id=?", new String[]{String.valueOf(itemId)});
+    }
+
+    public List<String> getAllArtifactStoragePaths() {
+        List<String> paths = new ArrayList<>();
+        Cursor c = getReadableDatabase().query(TABLE_ARTIFACTS, new String[]{"storage_path"}, null, null, null, null, null);
+        if (c != null) {
+            while (c.moveToNext()) {
+                paths.add(c.getString(0));
+            }
+            c.close();
+        }
+        return paths;
+    }
+
+    public long getTotalArtifactsSize() {
+        long total = 0;
+        Cursor c = getReadableDatabase().rawQuery("SELECT SUM(file_size_bytes) FROM " + TABLE_ARTIFACTS, null);
+        if (c != null) {
+            if (c.moveToFirst() && !c.isNull(0)) {
+                total = c.getLong(0);
+            }
+            c.close();
+        }
+        return total;
+    }
+
+    private MediaArtifact artifactFromCursor(Cursor c) {
+        MediaArtifact a = new MediaArtifact();
+        a.setId(c.getLong(c.getColumnIndexOrThrow("id")));
+        a.setContentItemId(c.getLong(c.getColumnIndexOrThrow("content_item_id")));
+        a.setArtifactType(c.getString(c.getColumnIndexOrThrow("artifact_type")));
+        a.setStoragePath(c.getString(c.getColumnIndexOrThrow("storage_path")));
+        int uriIdx = c.getColumnIndex("content_uri");
+        if (uriIdx >= 0) {
+            a.setContentUri(c.getString(uriIdx));
+        }
+        int mimeIdx = c.getColumnIndex("mime_type");
+        if (mimeIdx >= 0) {
+            a.setMimeType(c.getString(mimeIdx));
+        }
+        a.setFileSizeBytes(c.getLong(c.getColumnIndexOrThrow("file_size_bytes")));
+        int shaIdx = c.getColumnIndex("sha256");
+        if (shaIdx >= 0) {
+            a.setSha256(c.getString(shaIdx));
+        }
+        a.setRetentionPolicy(c.getString(c.getColumnIndexOrThrow("retention_policy")));
+        a.setExpiresAt(c.getLong(c.getColumnIndexOrThrow("expires_at")));
+        a.setCreatedAt(c.getLong(c.getColumnIndexOrThrow("created_at")));
+        return a;
     }
 }

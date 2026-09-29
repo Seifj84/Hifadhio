@@ -53,16 +53,36 @@
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_export_json"
-                    style="@style/Widget.Material3.Button.OutlinedButton"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
-                    android:text="Export Library as JSON"
-                    app:icon="@drawable/ic_share"
-                    app:iconTint="@color/primary_navy"
-                    android:textColor="@color/primary_navy" />
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_export_json"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="6dp"
+                        android:layout_weight="1"
+                        android:text="Export JSON"
+                        android:textColor="@color/primary_navy"
+                        app:icon="@drawable/ic_share"
+                        app:iconTint="@color/primary_navy" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_clean_cache"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:layout_weight="1"
+                        android:text="Clean Cache"
+                        android:textColor="@color/text_primary"
+                        app:icon="@drawable/ic_delete"
+                        app:iconTint="@color/text_secondary" />
+                </LinearLayout>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
@@ -125,7 +145,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Phase 1 Capture MVP • Version 0.1.0-phase1"
+                    android:text="Phase 7 Object Storage &amp; Media Pipeline • Version 0.7.0-phase7"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
