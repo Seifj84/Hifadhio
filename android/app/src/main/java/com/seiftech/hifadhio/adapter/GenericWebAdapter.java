@@ -79,26 +79,32 @@ public class GenericWebAdapter implements ContentExtractorAdapter {
                     || msg.contains("HTTP response error: 403")
                     || msg.contains("HTTP response error: 404")
                     || msg.contains("Too many redirects")) {
-                ExtractedMetadata fallback = new ExtractedMetadata();
-                fallback.setPlatform(detectPlatform(canonical));
-                fallback.setCanonicalUrl(canonical);
-                String domain = extractDomain(canonical);
-                fallback.setTitle(domain + " Page");
-                fallback.setOriginalTitle(domain + " Page");
-                if (msg.contains("Cleartext HTTP traffic")) {
-                    fallback.setDescription("Page saved securely (destination attempted cleartext HTTP redirect)");
-                } else if (msg.contains("403") || msg.contains("401") || msg.contains("400")) {
-                    fallback.setDescription("Page saved (content protected or requires browser session)");
-                } else if (msg.contains("404")) {
-                    fallback.setDescription("Link saved (page returned 404 Not Found)");
-                } else {
-                    fallback.setDescription("Link saved");
-                }
-                return fallback;
+                return createFallbackMetadata(canonical, msg);
             }
             // For real network timeouts or connection drops, throw so retry engine can retry!
             throw new ExtractionException("ERR_FETCH_FAILED", "Failed to fetch content from URL: " + msg, e);
         }
+    }
+
+    public ExtractedMetadata createFallbackMetadata(String url, String reason) {
+        String canonical = canonicalize(url);
+        ExtractedMetadata fallback = new ExtractedMetadata();
+        fallback.setPlatform(detectPlatform(canonical));
+        fallback.setCanonicalUrl(canonical);
+        String domain = extractDomain(canonical);
+        fallback.setTitle(domain + " Page");
+        fallback.setOriginalTitle(domain + " Page");
+        String msg = reason != null ? reason : "";
+        if (msg.contains("Cleartext HTTP traffic")) {
+            fallback.setDescription("Page saved securely (destination attempted cleartext HTTP redirect)");
+        } else if (msg.contains("403") || msg.contains("401") || msg.contains("400")) {
+            fallback.setDescription("Page saved (content protected or requires browser session)");
+        } else if (msg.contains("404")) {
+            fallback.setDescription("Link saved (page returned 404 Not Found)");
+        } else {
+            fallback.setDescription("Link saved from " + domain);
+        }
+        return fallback;
     }
 
     /**
