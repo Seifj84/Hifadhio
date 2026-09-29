@@ -1,12 +1,13 @@
 # Next Action
 
-Phase: Phase 06 — Official Platform Metadata Integrations
+Phase: Transitioning to Phase 07 — Object Storage and Controlled Media Pipeline
 
-Current Execution:
-1. WU-01: Create `HttpFetchHelper.java` shared HTTP utility.
-2. WU-02: Implement `YouTubeAdapter.java`, `ADAPTER_YOUTUBE.md`, and `YouTubeAdapterTest.java`.
-3. WU-03: Implement `TikTokAdapter.java`, `ADAPTER_TIKTOK.md`, and `TikTokAdapterTest.java`.
-4. WU-04: Implement `InstagramAdapter.java`, `ADAPTER_INSTAGRAM.md`, and `InstagramAdapterTest.java`.
-5. WU-05: Implement `RedditAdapter.java` and `XAdapter.java` with specs and tests.
-6. WU-06: Register all adapters in `ContentAdapterRegistry` and update `AdapterRegistryTest`.
-7. WU-07: Version bump to `0.6.0-phase6` (versionCode 6), CI/CD verification on GitHub Actions, release packaging.
+1. User testing and device verification of `Hifadhio-v0.6.0-phase6-debug.apk`:
+   - Test saving YouTube videos (watch URLs, shorts, and youtu.be shortlinks). Verify official title, channel name, and thumbnail extraction.
+   - Test saving TikTok links. Verify title/caption and creator handle extraction.
+   - Test saving Instagram Reels and posts. Verify clean canonicalization and structured fallback.
+   - Test saving Reddit discussion links and X/Twitter posts.
+2. Prepare Phase 07 per Master Spec Section 1155-1170:
+   - Private object storage design for media caching.
+   - Media retention lifecycle and temporary working files.
+   - Item media-access policy and cleanup worker.
