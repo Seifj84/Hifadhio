@@ -1,13 +1,13 @@
 # Project State
 
-Last updated: 2026-09-29T22:04:00+03:00
+Last updated: 2026-10-01T05:46:00+03:00
 Updated by: Antigravity Agent
 Repository: https://github.com/Seifj84/Hifadhio.git
 Branch: main
-Latest commit: 031d156
-App version: 0.8.0-phase8
-Backend version: Local-first SQLite MVP (Schema v5)
-Latest migration: 005_transcripts_and_speech_pipeline
+Latest commit: 5f7275d
+App version: 0.9.0-phase9
+Backend version: Local-first SQLite MVP (Schema v6)
+Latest migration: 006_ocr_records_and_visual_extraction
 
 ## Completed phases
 - Phase 00 — Foundation: Theme tokens, Brand Assets, Architecture Specification, Repository Creation on Seifj84 GitHub.
@@ -19,10 +19,11 @@ Latest migration: 005_transcripts_and_speech_pipeline
 - Phase 06 — Official Platform Metadata Integrations: Native platform adapters for YouTube (`YouTubeAdapter`, Priority 90), TikTok (`TikTokAdapter`, Priority 85), Instagram (`InstagramAdapter`, Priority 80), Facebook (`FacebookAdapter`, Priority 80), Reddit (`RedditAdapter`, Priority 75), and X/Twitter (`XAdapter`, Priority 75) with official oEmbed integration, video ID thumbnail parsing, and guaranteed fallback metadata.
 - Phase 07 — Object Storage and Controlled Media Pipeline: Partitioned internal app storage (`media/thumbnails/`, `media/temp/`, `media/audio/`, `media/artifacts/`), strict prohibition of database BLOBs via SQLite Schema v4 `artifacts` table, deterministic collision-free naming with SHA256 integrity, Android `FileProvider` scoped URI access (`com.seiftech.hifadhio.fileprovider`), automated remote thumbnail caching in `ProcessingJobManager`, `MediaCleanupWorker` for expired artifacts, orphaned disk files, and quota enforcement (50 MB quota), item cascade deletion, and offline image decoding in UI.
 - Phase 08 — Audio Extraction and Transcription Pipeline: Vendor-neutral transcription provider architecture (`TranscriptionProvider`, `TranscriptionRegistry`, ADR-007), database migration to SQLite Schema v5 (`transcripts` table), strict "never fabricate timestamps" rule (§15.3), zero-cost native subtitle/caption parsing (`SubtitlesExtractorProvider`, Priority 100), on-device offline speech recognition (`OfflineSpeechProvider`, Priority 80), cloud Whisper integration (`CloudWhisperProvider`, Priority 50), audio management subsystem (`AudioExtractor`), automatic pipeline job chaining (`TYPE_TRANSCRIBE`) in `ProcessingJobManager`, search-on-detail UI with live transcript filtering, timestamp navigation chips, and one-tap copy in `ContentDetailBottomSheet`.
+- Phase 09 — Visual Frame Extraction and OCR Engine: Vendor-neutral OCR provider architecture (`OcrProvider`, `OcrRegistry`, ADR-007/010), selective periodic frame sampling policy (`FrameExtractor`, 15 frame cap, zero fabricated timestamps), intelligent text deduplication (`TextDeduplicator`, watermark and consecutive slide suppression), SQLite Schema v6 migration (`ocr_records` table with cascade deletion and search index integration), immutable object storage artifact mirroring (`media/artifacts/`), automated background queue chaining (`TYPE_OCR`), and search-on-detail UI with live filter, frame chips, and copy action in `ContentDetailBottomSheet`.
 
 ## Current phase
-Phase 08 — Audio Extraction and Transcription Pipeline (COMPLETED)
-Next: Phase 09 — Visual Frame Extraction and OCR Engine
+Phase 09 — Visual Frame Extraction and OCR Engine (COMPLETED)
+Next: Phase 10 — AI Enrichment
 
 ## Current status
 COMPLETED
@@ -62,41 +63,46 @@ COMPLETED
 - Cloud Whisper Integration (`CloudWhisperProvider`): OpenAI/Groq compatible Whisper client with cost estimation ($0.006/min)
 - Strict Timestamps Rule: Timestamps recorded only when genuinely provided; never fabricated
 - Audio Subsystem (`AudioExtractor`): Media eligibility checks, file size (<25 MB) and duration (<30 min) validation, and scratchpad management
-- Pipeline Job Chaining: Automatic chaining of transcription jobs on media items upon metadata extraction completion
-- Search-on-Detail: Live dynamic text filtering across transcript segments within ContentDetailBottomSheet
-- Library-wide Transcript Search: Main search bar indexes inside full transcript texts
+- Pipeline Job Chaining: Automatic chaining of transcription jobs and OCR jobs on media items upon metadata extraction completion
+- Search-on-Detail: Live dynamic text filtering across transcript segments and visual OCR frames within ContentDetailBottomSheet
+- Library-wide Transcript & OCR Search: Main search bar indexes inside full transcript texts and on-screen visual texts
+- Vendor-Neutral OCR Engine (`OcrRegistry`): Priority-ordered provider architecture (`OnDeviceOcrProvider`, `CloudVisionOcrProvider`)
+- Selective Keyframe Sampling Policy (`FrameExtractor`): Periodic sampling cap (15 frames) with genuine timestamp preservation and image `-1L` guarantees
+- Intelligent Text Deduplication (`TextDeduplicator`): Detects >=60% watermark frequencies and adjacent slide redundancies
+- Database Schema v6 Migration: `ocr_records` table with cascade deletion and search index
 - Official Hifadhio brand system: NAS Digital Solutions • engineered by SeifTech
-- Automated GitHub Actions CI/CD with 18 unit test suites and GitHub Release publishing
+- Automated GitHub Actions CI/CD with 21 unit test suites and GitHub Release publishing
 
 ## Current architecture
 - Mobile: Android Native (Java, Material 3, AndroidX, SDK 35)
 - Speech & Transcription: Vendor-neutral `TranscriptionProvider` registry, true-timestamp segment model, VTT/SRT parsers
+- Visual Frame & OCR: Vendor-neutral `OcrProvider` registry, `FrameExtractor` sampling, `TextDeduplicator` watermark suppression
 - Extraction Framework: Extensible `ContentExtractorAdapter` hierarchy and `ContentAdapterRegistry`
-- Storage: Controlled local object storage (`MediaStorageManager`) + SQLite Schema v5 (`artifacts` and `transcripts` tables)
+- Storage: Controlled local object storage (`MediaStorageManager`) + SQLite Schema v6 (`artifacts`, `transcripts`, and `ocr_records` tables)
 - Network: `HttpFetchHelper` with HTTPS upgrade, mobile User-Agent, and bounded memory reads
-- Database: Local-first SQLite (`hifadhio.db`, Schema v5)
+- Database: Local-first SQLite (`hifadhio.db`, Schema v6)
 - Brand: Hifadhio (NAS Digital Solutions • engineered by SeifTech)
 
 ## Last verified commands
-- `git commit -m "fix(test): configure org.json dependency and fix multiMatches test assertion"` — PASS
+- `git commit -m "fix(ocr): correct ContentItem package import in FrameExtractor and tests"` — PASS
 - `powershell push_repo.ps1` — PASS (Remote: https://github.com/Seifj84/Hifadhio)
-- GitHub Actions CI/CD Build #36615030069 — PASS (Status: completed, Conclusion: success)
-- Unit tests (18 test suites) — ALL PASS
+- GitHub Actions CI/CD Build #36806949533 — PASS (Status: completed, Conclusion: success)
+- Unit tests (21 test suites) — ALL PASS
 - APK Package Structure & Signature Verification — PASS
 
 ## Current blockers
 - None.
 
 ## Exact next action
-Present Phase 08 completion report, test instructions, and verified APK links to the user for device verification.
+Present Phase 09 completion report, test instructions, and verified APK links to the user for device verification.
 
 ## Latest testable APK
-- Path: `release_records/phase_08_transcription/v0.8.0/Hifadhio-v0.8.0-phase8-debug.apk`
-- Workspace Root: `Hifadhio-v0.8.0-phase8-debug.apk`
-- Direct Download: https://github.com/Seifj84/Hifadhio/releases/download/v0.8.0-phase8/Hifadhio-v0.8.0-phase8-debug.apk
-- GitHub Release: https://github.com/Seifj84/Hifadhio/releases/tag/v0.8.0-phase8
+- Path: `release_records/phase_09_ocr/v0.9.0/Hifadhio-v0.9.0-phase9-debug.apk`
+- Workspace Root: `Hifadhio-v0.9.0-phase9-debug.apk`
+- Direct Download: https://github.com/Seifj84/Hifadhio/releases/download/v0.9.0-phase9/Hifadhio-v0.9.0-phase9-debug.apk
+- GitHub Release: https://github.com/Seifj84/Hifadhio/releases/tag/v0.9.0-phase9
 - Build type: debug
-- Version: 0.8.0-phase8 (versionCode 8)
-- Size: 6,337,858 bytes (6.04 MB)
-- SHA256: 1F5EF85D7F7FB5FDD4F4CD9740A828069540E48FE81329E0AED04A9F08D20FB5
-- Phase: Phase 08 Audio Extraction and Transcription Pipeline
+- Version: 0.9.0-phase9 (versionCode 9)
+- Size: 6,355,376 bytes (6.06 MB)
+- SHA256: 3A2E1AC274906B79244B32655EB22EF9291C798070C04F1358229F2D8954D433
+- Phase: Phase 09 Visual Frame Extraction and OCR Engine

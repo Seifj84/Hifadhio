@@ -10,3 +10,5 @@
 | 2026-09-29 | Phase 06 | 0.6.0-phase6 | APK Debug | SUCCESS | 6.0 MB (6,300,571 bytes) | `36c970d4fdc5ba0168a1f0e456138ae1ae81c4daca827f86b10e6cadc471b337` | GitHub Actions Build #36594437363. Official platform adapters: YouTube, TikTok, Instagram, Reddit, X. |
 | 2026-09-29 | Phase 07 | 0.7.0-phase7 | APK Debug | SUCCESS | 6.0 MB (6,315,409 bytes) | `a9b38bec9ea443949710a98ec2dfe1b81500738039283894d3c38ed87bc0c94a` | GitHub Actions Build #36606195301. Object storage, Schema v4 artifacts table, MediaCleanupWorker, FileProvider scoped access. |
 | 2026-09-29 | Phase 08 | 0.8.0-phase8 | APK Debug | SUCCESS | 6.04 MB (6,337,858 bytes) | `1f5ef85d7f7fb5fdd4f4cd9740a828069540e48fe81329e0aed04a9f08d20fb5` | GitHub Actions Build #36615030069. Audio extraction, Speech Transcription Pipeline, Schema v5 transcripts table, search-on-detail. |
+| 2026-10-01 | Phase 09 | 0.9.0-phase9 | APK Debug | SUCCESS | 6.06 MB (6,355,376 bytes) | `3a2e1ac274906b79244b32655eb22ef9291c798070c04f1358229f2d8954d433` | GitHub Actions Build #36806949533. Visual frame extraction, OCR engine, Schema v6 ocr_records table, text deduplication, search-on-detail. |
+

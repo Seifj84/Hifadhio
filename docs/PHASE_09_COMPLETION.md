@@ -161,7 +161,9 @@ The test suite expanded to **21 comprehensive unit test suites** with 100% passi
 
 - **Debug APK**: `Hifadhio-v0.9.0-phase9-debug.apk`
 - **Version**: `0.9.0-phase9` (versionCode 9)
-- **GitHub Release Tag**: `v0.9.0-phase9`
+- **GitHub Release Tag**: [`v0.9.0-phase9`](https://github.com/Seifj84/Hifadhio/releases/tag/v0.9.0-phase9)
+- **GitHub Actions Run**: [Run #36806949533](https://github.com/Seifj84/Hifadhio/actions/runs/36806949533)
+- **SHA256**: `3A2E1AC274906B79244B32655EB22EF9291C798070C04F1358229F2D8954D433`
 - **Release Records Location**: `release_records/phase_09_ocr/v0.9.0/`
 
 ---
