@@ -20,12 +20,12 @@ public class LocalHeuristicAiProvider implements AiProvider {
     private static final Pattern HASHTAG_PATTERN = Pattern.compile("#(\\w{2,30})");
     private static final Pattern URL_PATTERN = Pattern.compile("https?://[\\w./?&=-]+");
 
-    // Known common developer & tech entities
-    private static final Map<String, String> KNOWN_ENTITIES = new HashMap<>();
+    // Known common developer & tech entities (ordered deterministically)
+    private static final Map<String, String> KNOWN_ENTITIES = new LinkedHashMap<>();
     static {
+        KNOWN_ENTITIES.put("docker", "tool");
         KNOWN_ENTITIES.put("github", "tool");
         KNOWN_ENTITIES.put("git", "tool");
-        KNOWN_ENTITIES.put("docker", "tool");
         KNOWN_ENTITIES.put("sqlite", "tool");
         KNOWN_ENTITIES.put("android", "product");
         KNOWN_ENTITIES.put("kotlin", "tool");
@@ -175,13 +175,15 @@ public class LocalHeuristicAiProvider implements AiProvider {
             List<AiEntity> entities = new ArrayList<>();
             for (Map.Entry<String, String> entry : KNOWN_ENTITIES.entrySet()) {
                 String word = entry.getKey();
-                int idx = lower.indexOf(word);
-                if (idx >= 0) {
+                Pattern wordPattern = Pattern.compile("\\b" + Pattern.quote(word) + "\\b", Pattern.CASE_INSENSITIVE);
+                Matcher matcher = wordPattern.matcher(text);
+                if (matcher.find()) {
+                    int idx = matcher.start();
                     int startIdx = Math.max(0, idx - 20);
                     int endIdx = Math.min(text.length(), idx + word.length() + 30);
                     String evidence = text.substring(startIdx, endIdx).trim();
                     entities.add(new AiEntity(capitalize(word), entry.getValue(), evidence));
-                    if (entities.size() >= 5) break;
+                    if (entities.size() >= 15) break;
                 }
             }
 
