@@ -12,12 +12,13 @@ import com.seiftech.hifadhio.transcription.Transcript;
 import com.seiftech.hifadhio.transcription.TranscriptSegment;
 import com.seiftech.hifadhio.ocr.OcrFrame;
 import com.seiftech.hifadhio.ocr.OcrRecord;
+import com.seiftech.hifadhio.ai.AiEnrichment;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ContentDb extends SQLiteOpenHelper {
     public static final String DB_NAME = "hifadhio.db";
-    public static final int DB_VERSION = 6;
+    public static final int DB_VERSION = 7;
     public static final String TABLE_ITEMS = "items";
     public static final String TABLE_COLLECTIONS = "collections";
     public static final String TABLE_JOBS = "processing_jobs";
@@ -25,6 +26,7 @@ public class ContentDb extends SQLiteOpenHelper {
     public static final String TABLE_ARTIFACTS = "artifacts";
     public static final String TABLE_TRANSCRIPTS = "transcripts";
     public static final String TABLE_OCR_RECORDS = "ocr_records";
+    public static final String TABLE_AI_ENRICHMENTS = "ai_enrichments";
 
     public static class CollectionStat {
         private final String name;
@@ -79,6 +81,7 @@ public class ContentDb extends SQLiteOpenHelper {
         createArtifactsTable(db);
         createTranscriptsTable(db);
         createOcrRecordsTable(db);
+        createAiEnrichmentsTable(db);
     }
 
     @Override
@@ -106,6 +109,34 @@ public class ContentDb extends SQLiteOpenHelper {
         if (oldVersion < 6) {
             createOcrRecordsTable(db);
         }
+        if (oldVersion < 7) {
+            createAiEnrichmentsTable(db);
+        }
+    }
+
+    private void createAiEnrichmentsTable(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_AI_ENRICHMENTS + " ("
+                + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + "content_item_id INTEGER NOT NULL UNIQUE, "
+                + "summary_short TEXT NOT NULL, "
+                + "summary_detailed TEXT NOT NULL, "
+                + "key_points_json TEXT, "
+                + "topics_json TEXT, "
+                + "suggested_tags_json TEXT, "
+                + "entities_json TEXT, "
+                + "action_items_json TEXT, "
+                + "suggested_collection TEXT, "
+                + "provider_id TEXT NOT NULL, "
+                + "model TEXT, "
+                + "prompt_version TEXT NOT NULL, "
+                + "cost_usd REAL DEFAULT 0.0, "
+                + "raw_json TEXT, "
+                + "created_at INTEGER NOT NULL, "
+                + "updated_at INTEGER NOT NULL, "
+                + "FOREIGN KEY(content_item_id) REFERENCES " + TABLE_ITEMS + "(id) ON DELETE CASCADE"
+                + ")");
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_ai_item ON " + TABLE_AI_ENRICHMENTS + " (content_item_id)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_ai_created ON " + TABLE_AI_ENRICHMENTS + " (created_at)");
     }
 
     private void createOcrRecordsTable(SQLiteDatabase db) {
@@ -244,6 +275,7 @@ public class ContentDb extends SQLiteOpenHelper {
         deleteArtifactsForItem(id);
         deleteTranscriptForItem(id);
         deleteOcrRecordForItem(id);
+        deleteAiEnrichmentForItem(id);
         return getWritableDatabase().delete(TABLE_ITEMS, "id=?", new String[]{String.valueOf(id)});
     }
 
@@ -371,8 +403,8 @@ public class ContentDb extends SQLiteOpenHelper {
 
         if (query != null && !query.trim().isEmpty()) {
             String q = "%" + query.trim() + "%";
-            sql.append(" AND (title LIKE ? OR original_title LIKE ? OR caption LIKE ? OR notes LIKE ? OR tags LIKE ? OR url LIKE ? OR platform LIKE ? OR collection_name LIKE ? OR id IN (SELECT content_item_id FROM " + TABLE_TRANSCRIPTS + " WHERE full_text LIKE ?) OR id IN (SELECT content_item_id FROM " + TABLE_OCR_RECORDS + " WHERE full_text LIKE ?))");
-            for (int i = 0; i < 10; i++) {
+            sql.append(" AND (title LIKE ? OR original_title LIKE ? OR caption LIKE ? OR notes LIKE ? OR tags LIKE ? OR url LIKE ? OR platform LIKE ? OR collection_name LIKE ? OR id IN (SELECT content_item_id FROM " + TABLE_TRANSCRIPTS + " WHERE full_text LIKE ?) OR id IN (SELECT content_item_id FROM " + TABLE_OCR_RECORDS + " WHERE full_text LIKE ?) OR id IN (SELECT content_item_id FROM " + TABLE_AI_ENRICHMENTS + " WHERE summary_short LIKE ? OR summary_detailed LIKE ? OR raw_json LIKE ?))");
+            for (int i = 0; i < 13; i++) {
                 args.add(q);
             }
         }
@@ -1278,6 +1310,109 @@ public class ContentDb extends SQLiteOpenHelper {
         int updIdx = c.getColumnIndex("updated_at");
         if (updIdx >= 0) r.setUpdatedAt(c.getLong(updIdx));
         return r;
+    }
+
+    public long saveAiEnrichment(AiEnrichment enrichment) {
+        if (enrichment == null || enrichment.getContentItemId() <= 0) return -1;
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put("content_item_id", enrichment.getContentItemId());
+        cv.put("summary_short", enrichment.getSummaryShort());
+        cv.put("summary_detailed", enrichment.getSummaryDetailed());
+        cv.put("key_points_json", AiEnrichment.stringListToJson(enrichment.getKeyPoints()));
+        cv.put("topics_json", AiEnrichment.stringListToJson(enrichment.getTopics()));
+        cv.put("suggested_tags_json", AiEnrichment.stringListToJson(enrichment.getSuggestedTags()));
+        cv.put("entities_json", AiEnrichment.entitiesToJson(enrichment.getEntities()));
+        cv.put("action_items_json", AiEnrichment.stringListToJson(enrichment.getActionItems()));
+        cv.put("suggested_collection", enrichment.getSuggestedCollection());
+        cv.put("provider_id", enrichment.getProviderId());
+        cv.put("model", enrichment.getModel());
+        cv.put("prompt_version", enrichment.getPromptVersion());
+        cv.put("cost_usd", enrichment.getCostUsd());
+        cv.put("raw_json", enrichment.getRawJson());
+        long now = System.currentTimeMillis();
+        cv.put("created_at", enrichment.getCreatedAt() > 0 ? enrichment.getCreatedAt() : now);
+        cv.put("updated_at", now);
+
+        long id = db.insertWithOnConflict(TABLE_AI_ENRICHMENTS, null, cv, SQLiteDatabase.CONFLICT_REPLACE);
+        if (id > 0) {
+            enrichment.setId(id);
+        }
+        return id;
+    }
+
+    public AiEnrichment getAiEnrichmentForItem(long contentItemId) {
+        Cursor c = getReadableDatabase().query(TABLE_AI_ENRICHMENTS, null, "content_item_id=?", new String[]{String.valueOf(contentItemId)}, null, null, null);
+        try {
+            if (c.moveToFirst()) {
+                return aiEnrichmentFromCursor(c);
+            }
+        } finally {
+            c.close();
+        }
+        return null;
+    }
+
+    public boolean hasAiEnrichment(long contentItemId) {
+        Cursor c = getReadableDatabase().rawQuery("SELECT 1 FROM " + TABLE_AI_ENRICHMENTS + " WHERE content_item_id=? LIMIT 1", new String[]{String.valueOf(contentItemId)});
+        try {
+            return c.moveToFirst();
+        } finally {
+            c.close();
+        }
+    }
+
+    public int deleteAiEnrichmentForItem(long contentItemId) {
+        return getWritableDatabase().delete(TABLE_AI_ENRICHMENTS, "content_item_id=?", new String[]{String.valueOf(contentItemId)});
+    }
+
+    private AiEnrichment aiEnrichmentFromCursor(Cursor c) {
+        AiEnrichment e = new AiEnrichment();
+        e.setId(c.getLong(c.getColumnIndexOrThrow("id")));
+        e.setContentItemId(c.getLong(c.getColumnIndexOrThrow("content_item_id")));
+        e.setSummaryShort(c.getString(c.getColumnIndexOrThrow("summary_short")));
+        e.setSummaryDetailed(c.getString(c.getColumnIndexOrThrow("summary_detailed")));
+
+        int kpIdx = c.getColumnIndex("key_points_json");
+        if (kpIdx >= 0) e.setKeyPoints(AiEnrichment.jsonToStringList(c.getString(kpIdx)));
+
+        int tpIdx = c.getColumnIndex("topics_json");
+        if (tpIdx >= 0) e.setTopics(AiEnrichment.jsonToStringList(c.getString(tpIdx)));
+
+        int stIdx = c.getColumnIndex("suggested_tags_json");
+        if (stIdx >= 0) e.setSuggestedTags(AiEnrichment.jsonToStringList(c.getString(stIdx)));
+
+        int entIdx = c.getColumnIndex("entities_json");
+        if (entIdx >= 0) e.setEntities(AiEnrichment.jsonToEntities(c.getString(entIdx)));
+
+        int aiIdx = c.getColumnIndex("action_items_json");
+        if (aiIdx >= 0) e.setActionItems(AiEnrichment.jsonToStringList(c.getString(aiIdx)));
+
+        int scIdx = c.getColumnIndex("suggested_collection");
+        if (scIdx >= 0) e.setSuggestedCollection(c.getString(scIdx));
+
+        int provIdx = c.getColumnIndex("provider_id");
+        if (provIdx >= 0) e.setProviderId(c.getString(provIdx));
+
+        int modelIdx = c.getColumnIndex("model");
+        if (modelIdx >= 0) e.setModel(c.getString(modelIdx));
+
+        int pvIdx = c.getColumnIndex("prompt_version");
+        if (pvIdx >= 0) e.setPromptVersion(c.getString(pvIdx));
+
+        int costIdx = c.getColumnIndex("cost_usd");
+        if (costIdx >= 0) e.setCostUsd(c.getDouble(costIdx));
+
+        int rawIdx = c.getColumnIndex("raw_json");
+        if (rawIdx >= 0) e.setRawJson(c.getString(rawIdx));
+
+        int caIdx = c.getColumnIndex("created_at");
+        if (caIdx >= 0) e.setCreatedAt(c.getLong(caIdx));
+
+        int uaIdx = c.getColumnIndex("updated_at");
+        if (uaIdx >= 0) e.setUpdatedAt(c.getLong(uaIdx));
+
+        return e;
     }
 }
 

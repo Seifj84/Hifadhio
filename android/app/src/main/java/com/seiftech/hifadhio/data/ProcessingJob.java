@@ -17,6 +17,7 @@ public class ProcessingJob implements Serializable {
     public static final String TYPE_DUMMY_TEST = "DUMMY_TEST";
     public static final String TYPE_TRANSCRIBE = "TRANSCRIBE";
     public static final String TYPE_OCR = "OCR";
+    public static final String TYPE_AI_ENRICHMENT = "AI_ENRICHMENT";
 
     private long id;
     private long contentItemId;

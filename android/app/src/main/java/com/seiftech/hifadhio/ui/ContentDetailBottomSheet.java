@@ -46,6 +46,8 @@ import com.seiftech.hifadhio.transcription.TranscriptSegment;
 import com.seiftech.hifadhio.ocr.FrameExtractor;
 import com.seiftech.hifadhio.ocr.OcrFrame;
 import com.seiftech.hifadhio.ocr.OcrRecord;
+import com.seiftech.hifadhio.ai.AiEnrichment;
+import com.seiftech.hifadhio.ai.AiEntity;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -89,6 +91,13 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
     private EditText etOcrSearch;
     private ImageButton btnCopyOcr;
     private MaterialButton btnOcrAction;
+
+    // Phase 10: AI Enrichment Views
+    private LinearLayout layoutAiEnrichment, layoutAiKeyPoints, layoutAiEntities, layoutAiSuggestedTags, layoutAiSuggestedCollection;
+    private TextView tvAiBadgeGenerated, tvAiBadgeVersion, tvAiSummaryShort, tvAiSummaryDetailed;
+    private TextView tvAiKeyPointsHeader, tvAiEntitiesHeader, tvAiSuggestedTagsHeader, tvAiSuggestedCollection;
+    private ImageButton btnCopyAiSummary;
+    private MaterialButton btnAiAcceptCollection, btnAiReprocess;
 
     public static ContentDetailBottomSheet newInstance(ContentItem item) {
         ContentDetailBottomSheet sheet = new ContentDetailBottomSheet();
@@ -247,6 +256,47 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
             });
         }
 
+        // Phase 10 AI Enrichment Views
+        layoutAiEnrichment = view.findViewById(R.id.layout_detail_ai_enrichment);
+        layoutAiKeyPoints = view.findViewById(R.id.layout_ai_key_points);
+        layoutAiEntities = view.findViewById(R.id.layout_ai_entities);
+        layoutAiSuggestedTags = view.findViewById(R.id.layout_ai_suggested_tags);
+        layoutAiSuggestedCollection = view.findViewById(R.id.layout_ai_suggested_collection);
+        tvAiBadgeGenerated = view.findViewById(R.id.tv_ai_badge_generated);
+        tvAiBadgeVersion = view.findViewById(R.id.tv_ai_badge_version);
+        tvAiSummaryShort = view.findViewById(R.id.tv_ai_summary_short);
+        tvAiSummaryDetailed = view.findViewById(R.id.tv_ai_summary_detailed);
+        tvAiKeyPointsHeader = view.findViewById(R.id.tv_ai_key_points_header);
+        tvAiEntitiesHeader = view.findViewById(R.id.tv_ai_entities_header);
+        tvAiSuggestedTagsHeader = view.findViewById(R.id.tv_ai_suggested_tags_header);
+        tvAiSuggestedCollection = view.findViewById(R.id.tv_ai_suggested_collection);
+        btnCopyAiSummary = view.findViewById(R.id.btn_copy_ai_summary);
+        btnAiAcceptCollection = view.findViewById(R.id.btn_ai_accept_collection);
+        btnAiReprocess = view.findViewById(R.id.btn_ai_reprocess);
+
+        if (btnCopyAiSummary != null) {
+            btnCopyAiSummary.setOnClickListener(v -> {
+                AiEnrichment enrichment = db.getAiEnrichmentForItem(item.getId());
+                if (enrichment != null) {
+                    String fullSummary = enrichment.getSummaryShort() + "\n\n" + enrichment.getSummaryDetailed();
+                    ClipboardManager cm = (ClipboardManager) requireContext().getSystemService(Context.CLIPBOARD_SERVICE);
+                    if (cm != null) {
+                        cm.setPrimaryClip(ClipData.newPlainText("AI Summary", fullSummary.trim()));
+                        Toast.makeText(requireContext(), "AI summary copied to clipboard", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+        }
+
+        if (btnAiReprocess != null) {
+            btnAiReprocess.setOnClickListener(v -> {
+                ProcessingJobManager.getInstance(requireContext()).enqueueAiEnrichment(item.getId(), true);
+                Toast.makeText(requireContext(), "Reprocessing AI enrichment with latest prompt...", Toast.LENGTH_SHORT).show();
+                populateViews();
+                if (listener != null) listener.onContentUpdated(item);
+            });
+        }
+
         if (btnToggleTechDetails != null && layoutTechDetails != null) {
             btnToggleTechDetails.setOnClickListener(v -> {
                 isTechDetailsExpanded = !isTechDetailsExpanded;
@@ -396,6 +446,7 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
         populateProcessingTimeline();
         populateTranscript();
         populateOcr();
+        populateAiEnrichment();
     }
 
     private void populateProcessingTimeline() {
@@ -923,6 +974,206 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
             if (filtered.isEmpty()) {
                 tvOcrText.setText("No visual text matching \"" + query + "\"");
             }
+        }
+    }
+
+    private void populateAiEnrichment() {
+        if (layoutAiEnrichment == null) return;
+        AiEnrichment enrichment = db.getAiEnrichmentForItem(item.getId());
+
+        if (enrichment != null && (!enrichment.getSummaryShort().isEmpty() || !enrichment.getSummaryDetailed().isEmpty())) {
+            layoutAiEnrichment.setVisibility(View.VISIBLE);
+
+            if (tvAiBadgeGenerated != null) {
+                tvAiBadgeGenerated.setText("AI GENERATED");
+                tvAiBadgeGenerated.setVisibility(View.VISIBLE);
+            }
+            if (tvAiBadgeVersion != null) {
+                tvAiBadgeVersion.setText(enrichment.getPromptVersion() + " (" + enrichment.getProviderId() + ")");
+                tvAiBadgeVersion.setVisibility(View.VISIBLE);
+            }
+            if (tvAiSummaryShort != null) {
+                tvAiSummaryShort.setText(enrichment.getSummaryShort());
+                tvAiSummaryShort.setVisibility(View.VISIBLE);
+            }
+            if (tvAiSummaryDetailed != null) {
+                tvAiSummaryDetailed.setText(enrichment.getSummaryDetailed());
+                tvAiSummaryDetailed.setVisibility(View.VISIBLE);
+            }
+            if (btnCopyAiSummary != null) {
+                btnCopyAiSummary.setVisibility(View.VISIBLE);
+            }
+            if (btnAiReprocess != null) {
+                btnAiReprocess.setText("Reprocess with latest prompt");
+            }
+
+            renderAiKeyPoints(enrichment.getKeyPoints());
+            renderAiEntities(enrichment.getEntities());
+            renderAiSuggestedTags(enrichment.getSuggestedTags());
+            renderAiSuggestedCollection(enrichment.getSuggestedCollection());
+        } else {
+            layoutAiEnrichment.setVisibility(View.VISIBLE);
+
+            if (tvAiBadgeGenerated != null) {
+                tvAiBadgeGenerated.setText("READY FOR ENRICHMENT");
+                tvAiBadgeGenerated.setVisibility(View.VISIBLE);
+            }
+            if (tvAiBadgeVersion != null) {
+                tvAiBadgeVersion.setVisibility(View.GONE);
+            }
+            if (tvAiSummaryShort != null) {
+                tvAiSummaryShort.setText("AI enrichment not generated yet.");
+                tvAiSummaryShort.setVisibility(View.VISIBLE);
+            }
+            if (tvAiSummaryDetailed != null) {
+                tvAiSummaryDetailed.setVisibility(View.GONE);
+            }
+            if (tvAiKeyPointsHeader != null) tvAiKeyPointsHeader.setVisibility(View.GONE);
+            if (layoutAiKeyPoints != null) layoutAiKeyPoints.removeAllViews();
+            if (tvAiEntitiesHeader != null) tvAiEntitiesHeader.setVisibility(View.GONE);
+            if (layoutAiEntities != null) layoutAiEntities.removeAllViews();
+            if (tvAiSuggestedTagsHeader != null) tvAiSuggestedTagsHeader.setVisibility(View.GONE);
+            if (layoutAiSuggestedTags != null) layoutAiSuggestedTags.removeAllViews();
+            if (layoutAiSuggestedCollection != null) layoutAiSuggestedCollection.setVisibility(View.GONE);
+            if (btnCopyAiSummary != null) btnCopyAiSummary.setVisibility(View.GONE);
+            if (btnAiReprocess != null) {
+                btnAiReprocess.setText("Generate AI Enrichment");
+            }
+        }
+    }
+
+    private void renderAiKeyPoints(List<String> keyPoints) {
+        if (layoutAiKeyPoints == null) return;
+        layoutAiKeyPoints.removeAllViews();
+        if (keyPoints == null || keyPoints.isEmpty()) {
+            if (tvAiKeyPointsHeader != null) tvAiKeyPointsHeader.setVisibility(View.GONE);
+            return;
+        }
+        if (tvAiKeyPointsHeader != null) tvAiKeyPointsHeader.setVisibility(View.VISIBLE);
+
+        for (String kp : keyPoints) {
+            LinearLayout row = new LinearLayout(requireContext());
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setPadding(0, 3, 0, 3);
+
+            TextView tvBullet = new TextView(requireContext());
+            tvBullet.setText("• ");
+            tvBullet.setTextColor(ContextCompat.getColor(requireContext(), R.color.mint));
+            tvBullet.setTextSize(13);
+            tvBullet.setTypeface(null, android.graphics.Typeface.BOLD);
+
+            TextView tvText = new TextView(requireContext());
+            tvText.setText(kp);
+            tvText.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary));
+            tvText.setTextSize(12);
+
+            row.addView(tvBullet);
+            row.addView(tvText);
+            layoutAiKeyPoints.addView(row);
+        }
+    }
+
+    private void renderAiEntities(List<AiEntity> entities) {
+        if (layoutAiEntities == null) return;
+        layoutAiEntities.removeAllViews();
+        if (entities == null || entities.isEmpty()) {
+            if (tvAiEntitiesHeader != null) tvAiEntitiesHeader.setVisibility(View.GONE);
+            return;
+        }
+        if (tvAiEntitiesHeader != null) tvAiEntitiesHeader.setVisibility(View.VISIBLE);
+
+        for (AiEntity entity : entities) {
+            LinearLayout row = new LinearLayout(requireContext());
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setPadding(0, 3, 0, 3);
+
+            TextView tvBadge = new TextView(requireContext());
+            tvBadge.setText("[" + entity.getType().toUpperCase(java.util.Locale.US) + "] ");
+            tvBadge.setTextColor(ContextCompat.getColor(requireContext(), R.color.mint));
+            tvBadge.setTextSize(11);
+            tvBadge.setTypeface(null, android.graphics.Typeface.BOLD);
+
+            TextView tvName = new TextView(requireContext());
+            tvName.setText(entity.getName());
+            tvName.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary));
+            tvName.setTextSize(12);
+            tvName.setTypeface(null, android.graphics.Typeface.BOLD);
+
+            row.addView(tvBadge);
+            row.addView(tvName);
+
+            if (entity.getEvidence() != null && !entity.getEvidence().isEmpty()) {
+                TextView tvEvidence = new TextView(requireContext());
+                tvEvidence.setText(" — " + entity.getEvidence());
+                tvEvidence.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary));
+                tvEvidence.setTextSize(11);
+                row.addView(tvEvidence);
+            }
+
+            layoutAiEntities.addView(row);
+        }
+    }
+
+    private void renderAiSuggestedTags(List<String> suggestedTags) {
+        if (layoutAiSuggestedTags == null) return;
+        layoutAiSuggestedTags.removeAllViews();
+        if (suggestedTags == null || suggestedTags.isEmpty()) {
+            if (tvAiSuggestedTagsHeader != null) tvAiSuggestedTagsHeader.setVisibility(View.GONE);
+            return;
+        }
+        if (tvAiSuggestedTagsHeader != null) tvAiSuggestedTagsHeader.setVisibility(View.VISIBLE);
+
+        for (String tag : suggestedTags) {
+            final String cleanTag = tag.startsWith("#") ? tag.substring(1).trim() : tag.trim();
+            if (cleanTag.isEmpty()) continue;
+
+            com.google.android.material.button.MaterialButton chip = new com.google.android.material.button.MaterialButton(requireContext(), null, com.google.android.material.R.attr.borderlessButtonStyle);
+            chip.setText("#" + cleanTag);
+            chip.setTextSize(11);
+            chip.setTextColor(ContextCompat.getColor(requireContext(), R.color.mint));
+            chip.setPadding(12, 4, 12, 4);
+
+            chip.setOnClickListener(v -> {
+                String existing = item.getTags() != null ? item.getTags() : "";
+                if (!existing.toLowerCase(java.util.Locale.US).contains(cleanTag.toLowerCase(java.util.Locale.US))) {
+                    String updatedTags = existing.trim().isEmpty() ? cleanTag : existing.trim() + "," + cleanTag;
+                    item.setTags(updatedTags);
+                    db.update(item);
+                    populateTags();
+                    Toast.makeText(requireContext(), "Added #" + cleanTag, Toast.LENGTH_SHORT).show();
+                    chip.setEnabled(false);
+                    chip.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary));
+                    if (listener != null) listener.onContentUpdated(item);
+                } else {
+                    Toast.makeText(requireContext(), "#" + cleanTag + " is already in item tags", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+            layoutAiSuggestedTags.addView(chip);
+        }
+    }
+
+    private void renderAiSuggestedCollection(String suggestedCollection) {
+        if (layoutAiSuggestedCollection == null) return;
+        if (suggestedCollection == null || suggestedCollection.trim().isEmpty() || suggestedCollection.equalsIgnoreCase(item.getCollectionName())) {
+            layoutAiSuggestedCollection.setVisibility(View.GONE);
+            return;
+        }
+
+        layoutAiSuggestedCollection.setVisibility(View.VISIBLE);
+        if (tvAiSuggestedCollection != null) {
+            tvAiSuggestedCollection.setText("Suggested Collection: " + suggestedCollection.trim());
+        }
+        if (btnAiAcceptCollection != null) {
+            btnAiAcceptCollection.setText("Move to " + suggestedCollection.trim());
+            btnAiAcceptCollection.setOnClickListener(v -> {
+                item.setCollectionName(suggestedCollection.trim());
+                db.update(item);
+                if (chipCollection != null) chipCollection.setText(item.getCollectionName());
+                Toast.makeText(requireContext(), "Moved to " + suggestedCollection.trim(), Toast.LENGTH_SHORT).show();
+                layoutAiSuggestedCollection.setVisibility(View.GONE);
+                if (listener != null) listener.onContentUpdated(item);
+            });
         }
     }
 }

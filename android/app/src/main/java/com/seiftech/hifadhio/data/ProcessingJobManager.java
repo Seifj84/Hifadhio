@@ -23,6 +23,12 @@ import com.seiftech.hifadhio.ocr.OcrProvider;
 import com.seiftech.hifadhio.ocr.OcrRecord;
 import com.seiftech.hifadhio.ocr.OcrRegistry;
 import com.seiftech.hifadhio.ocr.OcrResult;
+import com.seiftech.hifadhio.ai.AiEnrichment;
+import com.seiftech.hifadhio.ai.AiOptions;
+import com.seiftech.hifadhio.ai.AiProvider;
+import com.seiftech.hifadhio.ai.AiRegistry;
+import com.seiftech.hifadhio.ai.AiResult;
+import com.seiftech.hifadhio.ai.PromptManager;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -109,6 +115,18 @@ public class ProcessingJobManager {
         return enqueueJob(contentItemId, ProcessingJob.TYPE_OCR);
     }
 
+    public long enqueueAiEnrichment(long contentItemId) {
+        return enqueueAiEnrichment(contentItemId, false);
+    }
+
+    public long enqueueAiEnrichment(long contentItemId, boolean forceReprocess) {
+        if (forceReprocess) {
+            String key = ProcessingJob.TYPE_AI_ENRICHMENT + ":" + contentItemId;
+            db.getWritableDatabase().delete(ContentDb.TABLE_JOBS, "idempotency_key=?", new String[]{key});
+        }
+        return enqueueJob(contentItemId, ProcessingJob.TYPE_AI_ENRICHMENT);
+    }
+
     public void triggerWorker() {
         executor.execute(() -> {
             try {
@@ -166,6 +184,10 @@ public class ProcessingJobManager {
         }
         if (ProcessingJob.TYPE_OCR.equals(job.getJobType())) {
             processOcrJob(job);
+            return;
+        }
+        if (ProcessingJob.TYPE_AI_ENRICHMENT.equals(job.getJobType())) {
+            processAiEnrichmentJob(job);
             return;
         }
 
@@ -269,6 +291,14 @@ public class ProcessingJobManager {
             }
         } catch (Exception e) {
             Log.w(TAG, "Failed to schedule OCR: " + e.getMessage());
+        }
+
+        // Stage 6 (Phase 10): Auto-chain AI Enrichment
+        try {
+            Log.i(TAG, "Item #" + item.getId() + " is scheduling AI enrichment job.");
+            enqueueAiEnrichment(item.getId());
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to schedule AI enrichment: " + e.getMessage());
         }
     }
 
@@ -468,6 +498,68 @@ public class ProcessingJobManager {
         } else {
             String errCode = result != null ? result.getErrorCode() : OcrResult.ERROR_OCR_FAILED;
             String errMsg = result != null ? result.getErrorMessage() : "OCR extraction produced no result";
+            throw new Exception(errCode + ": " + errMsg);
+        }
+    }
+
+    private void processAiEnrichmentJob(ProcessingJob job) throws Exception {
+        ContentItem item = db.getById(job.getContentItemId());
+        if (item == null) {
+            db.failJob(job.getId(), "ERR_NOT_FOUND", "Associated content item no longer exists", 0);
+            notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_FAILED, "Content item not found");
+            return;
+        }
+
+        Log.i(TAG, String.format(Locale.US, "[Job #%d] Starting AI enrichment for Item #%d (%s)",
+                job.getId(), item.getId(), item.getTitle()));
+
+        db.updateJobProgress(job.getId(), 20, "Assembling context from metadata, speech, and visual text");
+        notifyListeners(job.getId(), item.getId(), ProcessingJob.STATE_RUNNING, "Assembling context");
+
+        Transcript transcript = db.getTranscriptForItem(item.getId());
+        OcrRecord ocrRecord = db.getOcrRecordForItem(item.getId());
+        String contextText = PromptManager.assembleContext(item, transcript, ocrRecord);
+
+        if (contextText.isEmpty()) {
+            db.failJob(job.getId(), AiResult.ERROR_EMPTY_INPUT, "No textual context available for AI enrichment", 0);
+            notifyListeners(job.getId(), item.getId(), ProcessingJob.STATE_FAILED, "Context is empty");
+            return;
+        }
+
+        db.updateJobProgress(job.getId(), 45, "Executing AI enrichment extraction");
+        notifyListeners(job.getId(), item.getId(), ProcessingJob.STATE_RUNNING, "Enriching content");
+
+        AiProvider provider = AiRegistry.getInstance().getPrimaryProvider();
+        if (provider == null || !provider.isAvailable()) {
+            throw new Exception("AI_ENRICHMENT_FAILED: No AI provider available");
+        }
+
+        AiOptions options = AiOptions.defaults();
+        AiResult result = provider.enrich(item.getId(), contextText, options);
+
+        if (result != null && result.isSuccess() && result.getEnrichment() != null) {
+            AiEnrichment enrichment = result.getEnrichment();
+            db.updateJobProgress(job.getId(), 85, "Persisting structured enrichment and artifacts");
+
+            // Persist to database
+            db.saveAiEnrichment(enrichment);
+
+            // Register immutable JSON artifact in object storage
+            MediaStorageManager.getInstance(context).saveAiEnrichmentArtifact(item.getId(), enrichment.getRawJson(), db);
+
+            db.updateJobProgress(job.getId(), 100, "AI enrichment complete");
+            db.completeJob(job.getId(), "AI enrichment completed (" + enrichment.getPromptVersion() + ")");
+            db.updateStatus(item.getId(), "ENRICHED");
+
+            Log.i(TAG, String.format(Locale.US,
+                    "[Job #%d] AI enrichment COMPLETED in %d ms | Item #%d | Provider: %s | Version: %s",
+                    job.getId(), (System.currentTimeMillis() - job.getStartedAt()), item.getId(),
+                    provider.getDisplayName(), enrichment.getPromptVersion()));
+
+            notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_COMPLETED, "AI enrichment complete");
+        } else {
+            String errCode = result != null ? result.getErrorCode() : AiResult.ERROR_AI_ENRICHMENT_FAILED;
+            String errMsg = result != null ? result.getErrorMessage() : "AI enrichment produced no result";
             throw new Exception(errCode + ": " + errMsg);
         }
     }

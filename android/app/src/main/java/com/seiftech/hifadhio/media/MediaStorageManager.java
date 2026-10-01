@@ -405,6 +405,49 @@ public class MediaStorageManager {
         }
     }
 
+    /**
+     * Persists validated AI enrichment JSON as an immutable artifact in media/artifacts/ with SHA256 integrity.
+     */
+    public MediaArtifact saveAiEnrichmentArtifact(long itemId, String rawJson, ContentDb db) {
+        if (rawJson == null || rawJson.trim().isEmpty() || itemId <= 0) {
+            return null;
+        }
+        try {
+            String text = rawJson.trim();
+            byte[] bytes = text.getBytes("UTF-8");
+            String textHash = hashString(text).substring(0, 10);
+            String filename = String.format(Locale.US, "item_%d_ai_%s.json", itemId, textHash);
+            File targetFile = new File(artifactsDir, filename);
+
+            try (FileOutputStream fos = new FileOutputStream(targetFile)) {
+                fos.write(bytes);
+                fos.flush();
+            }
+
+            String sha256 = computeSha256(targetFile);
+            String contentUri = getSafeContentUri(targetFile);
+            MediaArtifact artifact = new MediaArtifact(
+                    itemId,
+                    MediaArtifact.TYPE_AI_ENRICHMENT,
+                    targetFile.getAbsolutePath(),
+                    contentUri,
+                    "application/json",
+                    bytes.length,
+                    sha256,
+                    MediaRetentionPolicy.LONG_TERM,
+                    0L
+            );
+            if (db != null) {
+                long id = db.insertArtifact(artifact);
+                artifact.setId(id);
+            }
+            return artifact;
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to save AI enrichment artifact: " + e.getMessage());
+            return null;
+        }
+    }
+
     private void copyFile(File src, File dst) throws IOException {
         try (InputStream in = new FileInputStream(src); OutputStream out = new FileOutputStream(dst)) {
             byte[] buf = new byte[8192];

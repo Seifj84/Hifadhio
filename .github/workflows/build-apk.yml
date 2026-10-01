@@ -1,4 +1,4 @@
-name: Build Hifadhio Phase 9 APK
+name: Build Hifadhio Phase 10 APK
 
 on:
   push:
@@ -43,49 +43,49 @@ jobs:
 
       - name: Prepare Release Artifacts
         run: |
-          mkdir -p release_records/phase_09_ocr/v0.9.0/
-          cp android/app/build/outputs/apk/debug/app-debug.apk release_records/phase_09_ocr/v0.9.0/Hifadhio-v0.9.0-phase9-debug.apk
-          cd release_records/phase_09_ocr/v0.9.0/
-          zip -9 Hifadhio-v0.9.0-phase9-debug.zip Hifadhio-v0.9.0-phase9-debug.apk
-          sha256sum Hifadhio-v0.9.0-phase9-debug.apk > SHA256SUMS.txt
-          sha256sum Hifadhio-v0.9.0-phase9-debug.zip >> SHA256SUMS.txt
+          mkdir -p release_records/phase_10_ai_enrichment/v0.10.0/
+          cp android/app/build/outputs/apk/debug/app-debug.apk release_records/phase_10_ai_enrichment/v0.10.0/Hifadhio-v0.10.0-phase10-debug.apk
+          cd release_records/phase_10_ai_enrichment/v0.10.0/
+          zip -9 Hifadhio-v0.10.0-phase10-debug.zip Hifadhio-v0.10.0-phase10-debug.apk
+          sha256sum Hifadhio-v0.10.0-phase10-debug.apk > SHA256SUMS.txt
+          sha256sum Hifadhio-v0.10.0-phase10-debug.zip >> SHA256SUMS.txt
           cat SHA256SUMS.txt
           cd ../../..
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Hifadhio-v0.9.0-phase9-debug
+          name: Hifadhio-v0.10.0-phase10-debug
           path: |
-            release_records/phase_09_ocr/v0.9.0/Hifadhio-v0.9.0-phase9-debug.apk
-            release_records/phase_09_ocr/v0.9.0/Hifadhio-v0.9.0-phase9-debug.zip
+            release_records/phase_10_ai_enrichment/v0.10.0/Hifadhio-v0.10.0-phase10-debug.apk
+            release_records/phase_10_ai_enrichment/v0.10.0/Hifadhio-v0.10.0-phase10-debug.zip
           if-no-files-found: error
 
       - name: Create GitHub Release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.9.0-phase9
-          name: "Hifadhio v0.9.0 (Phase 9: Visual Frame Extraction and OCR Engine)"
+          tag_name: v0.10.0-phase10
+          name: "Hifadhio v0.10.0 (Phase 10: AI Enrichment Engine)"
           body: |
-            ## Hifadhio v0.9.0 — Phase 9 Visual Frame Extraction & OCR Engine Release
+            ## Hifadhio v0.10.0 — Phase 10 AI Enrichment Engine Release
 
             > **Save once. Find it when it matters.**
             > A NAS Digital Solutions product - engineered by SeifTech.
 
-            ### What's New in v0.9.0:
-            - **Vendor-Neutral OCR Provider Architecture (`OcrProvider`, `OcrRegistry`)**: Extensible provider registry isolating optical character recognition engines from domain logic (Master Spec §1194).
-            - **Database Schema v6 Migration (`ocr_records` table)**: Migrated SQLite database with dedicated `ocr_records` table indexing full extracted text, provider ID, model, sampled frame count, frame JSON, and cost metrics.
-            - **Intelligent Text Deduplication Engine (`TextDeduplicator`)**: Suppresses persistent on-screen watermarks, static channel branding, and repeated slide headers across consecutive frames (§1195).
-            - **Selective Keyframe Sampling Subsystem (`FrameExtractor`)**: Enforces intelligent periodic frame sampling policy (default 5s interval, max 15 frames) to avoid compute, battery, and storage blowups (§15.4, §1193).
-            - **True Timestamps Guarantee**: Maintains true frame millisecond offsets for videos and strict `-1` for static images/infographics.
-            - **On-Device Optical Character Recognition (`OnDeviceOcrProvider`, Priority 100)**: Fully local, zero-cost ($0.00) visual text extraction.
-            - **Cloud Vision Integration (`CloudVisionOcrProvider`, Priority 50)**: Standard cloud vision API client abstraction with precise frame cost estimation ($0.0015/frame).
-            - **Search-on-Detail in UI (`ContentDetailBottomSheet`)**: Dedicated Visual Text (OCR) card with live filtering within visual text, clickable frame timestamp chips, one-tap copy action, and manual trigger.
-            - **Library-wide Visual Search**: Main library search queries inside extracted OCR visual text records so any on-screen text in saved videos or slides is immediately searchable.
-            - **Background Queue Integration in `ProcessingJobManager`**: First-class `TYPE_OCR` job with automated chaining for visual media items and immutable text artifact mirroring in `media/artifacts/`.
+            ### What's New in v0.10.0:
+            - **Vendor-Neutral AI Provider Architecture (`AiProvider`, `AiRegistry`)**: Modular AI enrichment engine abstraction with priority dispatch (Master Spec §1207, ADR-008).
+            - **Local On-Device NLP Engine (`LocalHeuristicAiProvider`, Priority 100)**: Fully offline, $0.00 cost heuristic extraction producing concise summaries, key points, entities, suggested tags, and collection classification.
+            - **Cloud LLM Abstraction (`CloudLlmAiProvider`, Priority 50)**: Standard API client abstraction with token cost tracking ($0.0005 per 1,000 chars).
+            - **Strict Schema Enforcement & Validation (`PromptManager`, §18)**: Verifies structured output against strict JSON schema (`summary_short`, `summary_detailed`, `key_points`, `topics`, `suggested_tags`, `entities`, `action_items`, `suggested_collection`).
+            - **Prompt Versioning & Reproducibility (`PromptManager`, §1209)**: All enrichment outputs track prompt version `v1.0.0` and can be reprocessed on demand (§1216).
+            - **Database Schema v7 Migration (`ai_enrichments` table)**: Persistent SQLite Schema v7 with cascade deletion on item removal and foreign key index.
+            - **Library-wide Search Integration**: Main search bar matches query keywords directly within AI short summaries, detailed summaries, and raw JSON payloads (§16.2).
+            - **Immutable Artifact Mirroring**: Saves validated enrichment payloads to `media/artifacts/item_{id}_ai_{hash}.json` with SHA256 integrity hashing (§1196).
+            - **Background Queue Integration (`TYPE_AI_ENRICHMENT`)**: Asynchronous pipeline job in `ProcessingJobManager` auto-chaining after metadata/transcription/OCR jobs.
+            - **Interactive AI UI in `ContentDetailBottomSheet`**: Dedicated AI Enrichment card with "AI GENERATED" label (§790), expandable summaries, key takeaways, entities mentioned, clickable suggested tags (tap to add to item), suggested collection (tap to move), copy summary action, and reprocess button.
           files: |
-            release_records/phase_09_ocr/v0.9.0/Hifadhio-v0.9.0-phase9-debug.apk
-            release_records/phase_09_ocr/v0.9.0/Hifadhio-v0.9.0-phase9-debug.zip
+            release_records/phase_10_ai_enrichment/v0.10.0/Hifadhio-v0.10.0-phase10-debug.apk
+            release_records/phase_10_ai_enrichment/v0.10.0/Hifadhio-v0.10.0-phase10-debug.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

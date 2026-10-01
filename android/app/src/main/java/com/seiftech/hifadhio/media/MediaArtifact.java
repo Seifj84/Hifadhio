@@ -10,6 +10,7 @@ public class MediaArtifact {
     public static final String TYPE_TRANSCRIPT = "transcript";
     public static final String TYPE_OCR = "ocr";
     public static final String TYPE_SUMMARY = "summary";
+    public static final String TYPE_AI_ENRICHMENT = "ai_enrichment";
 
     private long id;
     private long contentItemId;
