@@ -1,6 +1,6 @@
 package com.seiftech.hifadhio.ocr;
 
-import com.seiftech.hifadhio.model.ContentItem;
+import com.seiftech.hifadhio.data.ContentItem;
 import org.junit.Before;
 import org.junit.Test;
 import java.io.File;

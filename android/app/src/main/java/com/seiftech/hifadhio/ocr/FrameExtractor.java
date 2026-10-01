@@ -1,7 +1,7 @@
 package com.seiftech.hifadhio.ocr;
 
 import android.content.Context;
-import com.seiftech.hifadhio.model.ContentItem;
+import com.seiftech.hifadhio.data.ContentItem;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
