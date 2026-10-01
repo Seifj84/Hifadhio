@@ -548,7 +548,7 @@ public class ProcessingJobManager {
             MediaStorageManager.getInstance(context).saveAiEnrichmentArtifact(item.getId(), enrichment.getRawJson(), db);
 
             db.updateJobProgress(job.getId(), 100, "AI enrichment complete");
-            db.completeJob(job.getId(), "AI enrichment completed (" + enrichment.getPromptVersion() + ")");
+            db.completeJob(job.getId());
             db.updateStatus(item.getId(), "ENRICHED");
 
             Log.i(TAG, String.format(Locale.US,
