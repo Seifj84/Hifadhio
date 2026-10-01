@@ -8,7 +8,9 @@
 - **Target Specification**: Sections 15.5, 18, 19, 20.2, 35 (ADR-008/ADR-010) & 1203–1221 of Master Spec
 - **Version**: `0.10.0-phase10` (versionCode 10)
 - **GitHub Release**: [`v0.10.0-phase10`](https://github.com/Seifj84/Hifadhio/releases/tag/v0.10.0-phase10)
-- **Direct APK**: `Hifadhio-v0.10.0-phase10-debug.apk`
+- **CI/CD Workflow Run**: [Run #36935750020](https://github.com/Seifj84/Hifadhio/actions/runs/36935750020) (Commit: `cbfdf47`)
+- **Direct APK**: `Hifadhio-v0.10.0-phase10-debug.apk` (6,378,530 bytes / 6.08 MB)
+- **SHA256**: `c65637738f701a08f3df81e90a494f2165f7d6ec294553539e58ff038762b863`
 
 ---
 

@@ -1,13 +1,13 @@
 # Project State
 
-Last updated: 2026-10-01T05:46:00+03:00
+Last updated: 2026-10-02T01:37:00+03:00
 Updated by: Antigravity Agent
 Repository: https://github.com/Seifj84/Hifadhio.git
 Branch: main
-Latest commit: 5f7275d
-App version: 0.9.0-phase9
-Backend version: Local-first SQLite MVP (Schema v6)
-Latest migration: 006_ocr_records_and_visual_extraction
+Latest commit: cbfdf47
+App version: 0.10.0-phase10
+Backend version: Local-first SQLite MVP (Schema v7)
+Latest migration: 007_ai_enrichments_and_semantic_synthesis
 
 ## Completed phases
 - Phase 00 — Foundation: Theme tokens, Brand Assets, Architecture Specification, Repository Creation on Seifj84 GitHub.
@@ -20,10 +20,11 @@ Latest migration: 006_ocr_records_and_visual_extraction
 - Phase 07 — Object Storage and Controlled Media Pipeline: Partitioned internal app storage (`media/thumbnails/`, `media/temp/`, `media/audio/`, `media/artifacts/`), strict prohibition of database BLOBs via SQLite Schema v4 `artifacts` table, deterministic collision-free naming with SHA256 integrity, Android `FileProvider` scoped URI access (`com.seiftech.hifadhio.fileprovider`), automated remote thumbnail caching in `ProcessingJobManager`, `MediaCleanupWorker` for expired artifacts, orphaned disk files, and quota enforcement (50 MB quota), item cascade deletion, and offline image decoding in UI.
 - Phase 08 — Audio Extraction and Transcription Pipeline: Vendor-neutral transcription provider architecture (`TranscriptionProvider`, `TranscriptionRegistry`, ADR-007), database migration to SQLite Schema v5 (`transcripts` table), strict "never fabricate timestamps" rule (§15.3), zero-cost native subtitle/caption parsing (`SubtitlesExtractorProvider`, Priority 100), on-device offline speech recognition (`OfflineSpeechProvider`, Priority 80), cloud Whisper integration (`CloudWhisperProvider`, Priority 50), audio management subsystem (`AudioExtractor`), automatic pipeline job chaining (`TYPE_TRANSCRIBE`) in `ProcessingJobManager`, search-on-detail UI with live transcript filtering, timestamp navigation chips, and one-tap copy in `ContentDetailBottomSheet`.
 - Phase 09 — Visual Frame Extraction and OCR Engine: Vendor-neutral OCR provider architecture (`OcrProvider`, `OcrRegistry`, ADR-007/010), selective periodic frame sampling policy (`FrameExtractor`, 15 frame cap, zero fabricated timestamps), intelligent text deduplication (`TextDeduplicator`, watermark and consecutive slide suppression), SQLite Schema v6 migration (`ocr_records` table with cascade deletion and search index integration), immutable object storage artifact mirroring (`media/artifacts/`), automated background queue chaining (`TYPE_OCR`), and search-on-detail UI with live filter, frame chips, and copy action in `ContentDetailBottomSheet`.
+- Phase 10 — AI Enrichment Engine: Vendor-neutral AI provider architecture (`AiProvider`, `AiRegistry`, ADR-008/010), strict JSON schema validation (§18), prompt versioning (`PromptManager`, `v1.0.0`), zero-cost deterministic on-device NLP engine (`LocalHeuristicAiProvider`, Priority 100, $0.00 cost) and cloud LLM client abstraction (`CloudLlmAiProvider`, Priority 50), SQLite Schema v7 migration (`ai_enrichments` table with cascade deletion and search index integration), immutable JSON artifact mirroring (`media/artifacts/item_{id}_ai_{hash}.json`), background queue integration (`TYPE_AI_ENRICHMENT`), and UI integration in `ContentDetailBottomSheet` with "AI GENERATED" label, dual-tier summaries, key takeaways, entities, interactive suggested tags, and one-tap collection reassignment.
 
 ## Current phase
-Phase 09 — Visual Frame Extraction and OCR Engine (COMPLETED)
-Next: Phase 10 — AI Enrichment
+Phase 10 — AI Enrichment Engine (COMPLETED)
+Next: Phase 11 — Local Search & Retrieval Engine (BM25 Full-Text Search, Hybrid Ranking, Search Operators)
 
 ## Current status
 COMPLETED
