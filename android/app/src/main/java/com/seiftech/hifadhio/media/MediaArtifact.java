@@ -8,6 +8,7 @@ public class MediaArtifact {
     public static final String TYPE_AUDIO = "audio";
     public static final String TYPE_VIDEO_SAMPLE = "video_sample";
     public static final String TYPE_TRANSCRIPT = "transcript";
+    public static final String TYPE_OCR = "ocr";
     public static final String TYPE_SUMMARY = "summary";
 
     private long id;

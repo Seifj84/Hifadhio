@@ -362,6 +362,49 @@ public class MediaStorageManager {
         }
     }
 
+    /**
+     * Persists OCR visual text as an immutable text artifact in media/artifacts/ with SHA256 integrity.
+     */
+    public MediaArtifact saveOcrArtifact(long itemId, String ocrText, ContentDb db) {
+        if (ocrText == null || ocrText.trim().isEmpty() || itemId <= 0) {
+            return null;
+        }
+        try {
+            String text = ocrText.trim();
+            byte[] bytes = text.getBytes("UTF-8");
+            String textHash = hashString(text).substring(0, 10);
+            String filename = String.format(Locale.US, "item_%d_ocr_%s.txt", itemId, textHash);
+            File targetFile = new File(artifactsDir, filename);
+
+            try (FileOutputStream fos = new FileOutputStream(targetFile)) {
+                fos.write(bytes);
+                fos.flush();
+            }
+
+            String sha256 = computeSha256(targetFile);
+            String contentUri = getSafeContentUri(targetFile);
+            MediaArtifact artifact = new MediaArtifact(
+                    itemId,
+                    MediaArtifact.TYPE_OCR,
+                    targetFile.getAbsolutePath(),
+                    contentUri,
+                    "text/plain",
+                    bytes.length,
+                    sha256,
+                    MediaRetentionPolicy.LONG_TERM,
+                    0L
+            );
+            if (db != null) {
+                long id = db.insertArtifact(artifact);
+                artifact.setId(id);
+            }
+            return artifact;
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to save OCR artifact: " + e.getMessage());
+            return null;
+        }
+    }
+
     private void copyFile(File src, File dst) throws IOException {
         try (InputStream in = new FileInputStream(src); OutputStream out = new FileOutputStream(dst)) {
             byte[] buf = new byte[8192];

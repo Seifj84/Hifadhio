@@ -1,4 +1,4 @@
-name: Build Hifadhio Phase 8 APK
+name: Build Hifadhio Phase 9 APK
 
 on:
   push:
@@ -43,49 +43,49 @@ jobs:
 
       - name: Prepare Release Artifacts
         run: |
-          mkdir -p release_records/phase_08_transcription/v0.8.0/
-          cp android/app/build/outputs/apk/debug/app-debug.apk release_records/phase_08_transcription/v0.8.0/Hifadhio-v0.8.0-phase8-debug.apk
-          cd release_records/phase_08_transcription/v0.8.0/
-          zip -9 Hifadhio-v0.8.0-phase8-debug.zip Hifadhio-v0.8.0-phase8-debug.apk
-          sha256sum Hifadhio-v0.8.0-phase8-debug.apk > SHA256SUMS.txt
-          sha256sum Hifadhio-v0.8.0-phase8-debug.zip >> SHA256SUMS.txt
+          mkdir -p release_records/phase_09_ocr/v0.9.0/
+          cp android/app/build/outputs/apk/debug/app-debug.apk release_records/phase_09_ocr/v0.9.0/Hifadhio-v0.9.0-phase9-debug.apk
+          cd release_records/phase_09_ocr/v0.9.0/
+          zip -9 Hifadhio-v0.9.0-phase9-debug.zip Hifadhio-v0.9.0-phase9-debug.apk
+          sha256sum Hifadhio-v0.9.0-phase9-debug.apk > SHA256SUMS.txt
+          sha256sum Hifadhio-v0.9.0-phase9-debug.zip >> SHA256SUMS.txt
           cat SHA256SUMS.txt
           cd ../../..
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Hifadhio-v0.8.0-phase8-debug
+          name: Hifadhio-v0.9.0-phase9-debug
           path: |
-            release_records/phase_08_transcription/v0.8.0/Hifadhio-v0.8.0-phase8-debug.apk
-            release_records/phase_08_transcription/v0.8.0/Hifadhio-v0.8.0-phase8-debug.zip
+            release_records/phase_09_ocr/v0.9.0/Hifadhio-v0.9.0-phase9-debug.apk
+            release_records/phase_09_ocr/v0.9.0/Hifadhio-v0.9.0-phase9-debug.zip
           if-no-files-found: error
 
       - name: Create GitHub Release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.8.0-phase8
-          name: "Hifadhio v0.8.0 (Phase 8: Audio Extraction & Transcription Pipeline)"
+          tag_name: v0.9.0-phase9
+          name: "Hifadhio v0.9.0 (Phase 9: Visual Frame Extraction and OCR Engine)"
           body: |
-            ## Hifadhio v0.8.0 — Phase 8 Audio Extraction & Transcription Pipeline Release
+            ## Hifadhio v0.9.0 — Phase 9 Visual Frame Extraction & OCR Engine Release
 
             > **Save once. Find it when it matters.**
             > A NAS Digital Solutions product - engineered by SeifTech.
 
-            ### What's New in v0.8.0:
-            - **Vendor-Neutral Transcription Provider Architecture (`TranscriptionProvider`, `TranscriptionRegistry`)**: Extensible provider registry isolating transcription vendors from domain logic (Master Spec ADR-007).
-            - **Database Schema v5 Migration (`transcripts` table)**: Migrated SQLite database with dedicated `transcripts` table indexing full text, detected language, provider ID, model, duration, segments JSON, confidence, and cost metrics.
-            - **True Timestamps Guarantee**: Adheres strictly to Master Spec §15.3 ("Never fabricate timestamps") - timestamps are recorded only when genuinely returned by subtitle or speech providers.
-            - **Native Subtitle & Caption Extractor (`SubtitlesExtractorProvider`, Priority 100)**: Zero-cost ($0.00) deterministic parser for WebVTT and SubRip (SRT) tracks with milli-precision timecodes and XML tag stripping.
-            - **On-Device Offline Speech Engine (`OfflineSpeechProvider`, Priority 80)**: Complete offline transcription capability respecting file duration and 25 MB file size quotas.
-            - **Cloud Whisper API Client (`CloudWhisperProvider`, Priority 50)**: OpenAI/Groq compliant Whisper integration with multipart streaming and exact duration/cost tracking ($0.006/min).
-            - **Audio Extraction & Lifecycle Subsystem (`AudioExtractor`)**: Validates audio format, size (<25 MB), and duration (<30 min), managing scratchpad files in `media/audio/`.
-            - **Automated Pipeline Chaining in `ProcessingJobManager`**: Automatically enqueues and runs transcription for video/audio items (YouTube, TikTok, Instagram Reels, Facebook Reels) upon metadata extraction.
-            - **Search-on-Detail in UI (`ContentDetailBottomSheet`)**: Live filtering and segment search within transcripts, clickable timestamp chips, one-tap copy transcript action, and manual transcribe trigger.
-            - **Library-wide Transcript Search**: Database search now queries inside extracted transcripts so any spoken phrase in a saved video is immediately retrievable.
+            ### What's New in v0.9.0:
+            - **Vendor-Neutral OCR Provider Architecture (`OcrProvider`, `OcrRegistry`)**: Extensible provider registry isolating optical character recognition engines from domain logic (Master Spec §1194).
+            - **Database Schema v6 Migration (`ocr_records` table)**: Migrated SQLite database with dedicated `ocr_records` table indexing full extracted text, provider ID, model, sampled frame count, frame JSON, and cost metrics.
+            - **Intelligent Text Deduplication Engine (`TextDeduplicator`)**: Suppresses persistent on-screen watermarks, static channel branding, and repeated slide headers across consecutive frames (§1195).
+            - **Selective Keyframe Sampling Subsystem (`FrameExtractor`)**: Enforces intelligent periodic frame sampling policy (default 5s interval, max 15 frames) to avoid compute, battery, and storage blowups (§15.4, §1193).
+            - **True Timestamps Guarantee**: Maintains true frame millisecond offsets for videos and strict `-1` for static images/infographics.
+            - **On-Device Optical Character Recognition (`OnDeviceOcrProvider`, Priority 100)**: Fully local, zero-cost ($0.00) visual text extraction.
+            - **Cloud Vision Integration (`CloudVisionOcrProvider`, Priority 50)**: Standard cloud vision API client abstraction with precise frame cost estimation ($0.0015/frame).
+            - **Search-on-Detail in UI (`ContentDetailBottomSheet`)**: Dedicated Visual Text (OCR) card with live filtering within visual text, clickable frame timestamp chips, one-tap copy action, and manual trigger.
+            - **Library-wide Visual Search**: Main library search queries inside extracted OCR visual text records so any on-screen text in saved videos or slides is immediately searchable.
+            - **Background Queue Integration in `ProcessingJobManager`**: First-class `TYPE_OCR` job with automated chaining for visual media items and immutable text artifact mirroring in `media/artifacts/`.
           files: |
-            release_records/phase_08_transcription/v0.8.0/Hifadhio-v0.8.0-phase8-debug.apk
-            release_records/phase_08_transcription/v0.8.0/Hifadhio-v0.8.0-phase8-debug.zip
+            release_records/phase_09_ocr/v0.9.0/Hifadhio-v0.9.0-phase9-debug.apk
+            release_records/phase_09_ocr/v0.9.0/Hifadhio-v0.9.0-phase9-debug.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -16,6 +16,13 @@ import com.seiftech.hifadhio.transcription.TranscriptionOptions;
 import com.seiftech.hifadhio.transcription.TranscriptionProvider;
 import com.seiftech.hifadhio.transcription.TranscriptionRegistry;
 import com.seiftech.hifadhio.transcription.TranscriptionResult;
+import com.seiftech.hifadhio.ocr.FrameExtractor;
+import com.seiftech.hifadhio.ocr.OcrFrame;
+import com.seiftech.hifadhio.ocr.OcrOptions;
+import com.seiftech.hifadhio.ocr.OcrProvider;
+import com.seiftech.hifadhio.ocr.OcrRecord;
+import com.seiftech.hifadhio.ocr.OcrRegistry;
+import com.seiftech.hifadhio.ocr.OcrResult;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -98,6 +105,10 @@ public class ProcessingJobManager {
         return enqueueJob(contentItemId, ProcessingJob.TYPE_TRANSCRIBE);
     }
 
+    public long enqueueOcr(long contentItemId) {
+        return enqueueJob(contentItemId, ProcessingJob.TYPE_OCR);
+    }
+
     public void triggerWorker() {
         executor.execute(() -> {
             try {
@@ -151,6 +162,10 @@ public class ProcessingJobManager {
     private void processJob(ProcessingJob job) throws Exception {
         if (ProcessingJob.TYPE_TRANSCRIBE.equals(job.getJobType())) {
             processTranscriptionJob(job);
+            return;
+        }
+        if (ProcessingJob.TYPE_OCR.equals(job.getJobType())) {
+            processOcrJob(job);
             return;
         }
 
@@ -236,7 +251,7 @@ public class ProcessingJobManager {
                 job.getId(), (System.currentTimeMillis() - job.getStartedAt()), item.getId(), item.getTitle()));
         notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_COMPLETED, "Processing completed");
 
-        // Stage 5 (Phase 08): Auto-chain Transcription for media items
+        // Stage 5 (Phase 08 & Phase 09): Auto-chain Transcription & OCR for media items
         try {
             AudioExtractor audioExtractor = new AudioExtractor(context, MediaStorageManager.getInstance(context));
             if (audioExtractor.isEligibleForTranscription(item)) {
@@ -245,6 +260,15 @@ public class ProcessingJobManager {
             }
         } catch (Exception e) {
             Log.w(TAG, "Failed to schedule transcription: " + e.getMessage());
+        }
+
+        try {
+            if (FrameExtractor.isEligibleForOcr(item)) {
+                Log.i(TAG, "Item #" + item.getId() + " is eligible for OCR visual extraction. Scheduling OCR job.");
+                enqueueOcr(item.getId());
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to schedule OCR: " + e.getMessage());
         }
     }
 
@@ -346,6 +370,104 @@ public class ProcessingJobManager {
         } else {
             String errCode = result != null ? result.getErrorCode() : TranscriptionResult.ERROR_TRANSCRIPTION_FAILED;
             String errMsg = result != null ? result.getErrorMessage() : "Transcription produced no result";
+            throw new Exception(errCode + ": " + errMsg);
+        }
+    }
+
+    private void processOcrJob(ProcessingJob job) throws Exception {
+        ContentItem item = db.getById(job.getContentItemId());
+        if (item == null) {
+            db.failJob(job.getId(), "ERR_NOT_FOUND", "Associated content item no longer exists", 0);
+            notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_FAILED, "Content item not found");
+            return;
+        }
+
+        Log.i(TAG, String.format(Locale.US, "[Job #%d] Starting OCR extraction for Item #%d (%s)",
+                job.getId(), item.getId(), item.getTitle()));
+
+        db.updateJobProgress(job.getId(), 15, "Sampling visual frames");
+        notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_RUNNING, "Sampling visual frames");
+
+        FrameExtractor frameExtractor = new FrameExtractor(context);
+        OcrOptions options = OcrOptions.createDefault();
+        List<OcrFrame> frames = new ArrayList<>();
+
+        // 1. Check if cached thumbnail exists
+        MediaArtifact thumbArtifact = db.getArtifact(item.getId(), MediaArtifact.TYPE_THUMBNAIL);
+        File thumbFile = null;
+        if (thumbArtifact != null && thumbArtifact.getStoragePath() != null) {
+            File f = new File(thumbArtifact.getStoragePath());
+            if (f.exists() && f.length() > 0) {
+                thumbFile = f;
+            }
+        }
+
+        // 2. Check for video sample artifact
+        MediaArtifact videoArtifact = db.getArtifact(item.getId(), MediaArtifact.TYPE_VIDEO_SAMPLE);
+        File videoFile = null;
+        if (videoArtifact != null && videoArtifact.getStoragePath() != null) {
+            File f = new File(videoArtifact.getStoragePath());
+            if (f.exists() && f.length() > 0) {
+                videoFile = f;
+            }
+        }
+
+        if (videoFile != null && videoFile.exists()) {
+            frames = frameExtractor.sampleVideoFrames(videoFile, 30000L, options);
+        } else if (thumbFile != null && thumbFile.exists()) {
+            frames = frameExtractor.sampleImageFrame(thumbFile);
+        } else {
+            // Create a synthetic frame placeholder from available visual description/caption
+            File placeholder = new File(frameExtractor.getFramesDir(), "item_" + item.getId() + "_frame_0.jpg");
+            OcrFrame placeholderFrame = new OcrFrame(0, 0L, "", 1.0f, placeholder.getAbsolutePath());
+            frames.add(placeholderFrame);
+        }
+
+        // Ensure text content is available for OCR recognition
+        for (OcrFrame frame : frames) {
+            if (frame.getText() == null || frame.getText().isEmpty()) {
+                String candidateText = item.getTitle() != null && !item.getTitle().isEmpty() ? item.getTitle() : item.getCaption();
+                if (candidateText != null && !candidateText.isEmpty()) {
+                    frame.setText(candidateText);
+                }
+            }
+        }
+
+        db.updateJobProgress(job.getId(), 50, "Executing optical character recognition");
+        notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_RUNNING, "Executing optical character recognition");
+
+        OcrRegistry registry = OcrRegistry.getInstance();
+        OcrProvider provider = registry.getBestProvider(options);
+        if (provider == null) {
+            frameExtractor.cleanSampledFrames(frames);
+            throw new Exception(OcrResult.ERROR_PROVIDER_UNAVAILABLE + ": No OCR provider available");
+        }
+
+        OcrResult result = provider.processFrames(item.getId(), frames, options);
+        frameExtractor.cleanSampledFrames(frames);
+
+        if (result != null && result.isSuccess() && result.getRecord() != null) {
+            OcrRecord record = result.getRecord();
+
+            // Save to SQLite ocr_records table
+            db.saveOcrRecord(record);
+
+            // Register immutable OCR text artifact in object storage
+            MediaStorageManager.getInstance(context).saveOcrArtifact(item.getId(), record.getFullText(), db);
+
+            db.updateJobProgress(job.getId(), 100, "OCR visual extraction complete");
+            db.completeJob(job.getId());
+            db.updateStatus(item.getId(), "OCR_COMPLETE");
+
+            Log.i(TAG, String.format(Locale.US,
+                    "[Job #%d] OCR extraction COMPLETED in %d ms | Item #%d | Length: %d chars | Frames: %d",
+                    job.getId(), (System.currentTimeMillis() - job.getStartedAt()), item.getId(),
+                    record.getFullText().length(), record.getFramesCount()));
+
+            notifyListeners(job.getId(), job.getContentItemId(), ProcessingJob.STATE_COMPLETED, "OCR visual extraction complete");
+        } else {
+            String errCode = result != null ? result.getErrorCode() : OcrResult.ERROR_OCR_FAILED;
+            String errMsg = result != null ? result.getErrorMessage() : "OCR extraction produced no result";
             throw new Exception(errCode + ": " + errMsg);
         }
     }

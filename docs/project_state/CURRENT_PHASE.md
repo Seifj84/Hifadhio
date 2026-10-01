@@ -1,48 +1,49 @@
 # Current Phase
 
-Phase: Phase 08
-Name: Audio Extraction and Transcription Pipeline
-Status: COMPLETED
-Started: 2026-09-29T20:53:00+03:00
-Completed: 2026-09-29T22:04:00+03:00
-Target specification section: Sections 15.3, 20.2, 35 (ADR-007) & 1171-1188 of Master Spec
+Phase: Phase 09
+Name: Visual Frame Extraction and OCR Engine
+Status: IN_PROGRESS
+Started: 2026-10-01T05:25:00+03:00
+Completed: 
+Target specification section: Sections 15.4, 20.2, 35 (ADR-007/ADR-010) & 1189-1202 of Master Spec
 
 ## Objective
-Implement an extensible, traceable audio extraction and speech-to-text transcription pipeline for Hifadhio. Provide vendor-neutral provider abstraction (`TranscriptionProvider`), audio validation and duration checks, deterministic local transcript storage backed by SQLite Schema v5 (`transcripts` table), strict adherence to the "never fabricate timestamps" rule, transcript search-on-detail in UI, and automated integration with Hifadhio's asynchronous processing job queue.
+Implement a resource-efficient visual frame sampling and optical character recognition (OCR) engine for Hifadhio. Provide an extensible provider abstraction (`OcrProvider`), selective keyframe sampling policy to avoid compute/storage bloat, intelligent text deduplication of persistent on-screen titles/watermarks, deterministic SQLite Schema v6 (`ocr_records` table) persistence, search-on-detail UI with live filtering and frame timestamp chips, and seamless integration with the background processing queue.
 
 ## In scope
-- [x] Database Schema v5 migration in `ContentDb.java`: add `transcripts` table (item ID, full text, language, provider, model, duration, segments JSON, confidence, cost, timestamps).
-- [x] Domain models: `Transcript.java`, `TranscriptSegment.java`, `TranscriptionOptions.java`, `TranscriptionResult.java`.
-- [x] Provider architecture: `TranscriptionProvider` interface, `TranscriptionRegistry`, `SubtitlesExtractorProvider` (captions/tracks from YouTube/oEmbed/subtitles), `OfflineSpeechProvider` (local deterministic engine), and `CloudWhisperProvider` (OpenAI/Groq compliant API abstraction).
-- [x] Audio management: `AudioExtractor.java` handling media audio preparation, file size/duration validation, and storage under `media/audio/`.
-- [x] Processing pipeline integration: `ProcessingJobManager.java` with `JOB_TYPE_TRANSCRIBE`, automated transcription scheduling for video/audio items, artifact persistence, and cascade deletion.
-- [x] UI integration: `ContentDetailBottomSheet` transcript tab/card with live search within transcript ("search-on-detail"), timestamp navigation, language/provider metadata badges, and copy action.
-- [x] Unit test suites: `TranscriptionProviderTest.java`, `TranscriptModelTest.java`, and `AudioExtractorTest.java`.
-- [x] Version bump to `0.8.0-phase8` (versionCode 8), automated CI/CD build, and verified APK release.
+- [ ] Database Schema v6 migration in `ContentDb.java`: add `ocr_records` table (`id`, `content_item_id UNIQUE`, `full_text`, `provider_id`, `model`, `frames_count`, `frames_json`, `cost_usd`, timestamps), index on `content_item_id`, and search integration.
+- [ ] Domain models: `OcrFrame.java`, `OcrRecord.java`, `OcrOptions.java`, `OcrResult.java`.
+- [ ] Provider architecture: `OcrProvider` interface, `OcrRegistry`, `OnDeviceOcrProvider` (on-device local OCR engine), and `CloudVisionOcrProvider` (cloud vision OCR abstraction with cost tracking).
+- [ ] Frame sampling & text deduplication: `FrameExtractor.java` (selective periodic/keyframe sampling, max frame limit, scratchpad management) and `TextDeduplicator.java` (token/phrase overlap reduction across consecutive frames).
+- [ ] Processing pipeline integration: `ProcessingJob.TYPE_OCR = "OCR"` in `ProcessingJobManager.java`, automated chaining on visual media, artifact registration in `media/artifacts/`, and scratchpad eviction.
+- [ ] UI integration: `ContentDetailBottomSheet` Visual Text / OCR card with search-on-detail live filter, frame timestamp chips, copy action, and manual trigger.
+- [ ] Unit test suites: `OcrModelTest.java`, `OcrProviderTest.java`, `FrameExtractorTest.java`.
+- [ ] Version bump to `0.9.0-phase9` (versionCode 9), CI/CD verification, and APK release.
 
 ## Out of scope
-- Visual frame OCR (scheduled for Phase 09).
 - AI summaries and RAG embeddings (scheduled for Phase 10 & 12).
-- Real-time microphone dictation (scheduled for Phase 14 note capture).
+- Real-time video playback syncing (scheduled for Phase 14).
+- Direct screen recording capture.
 
 ## Preconditions
-- Phase 07 completed, verified, and published as `v0.7.0-phase7`.
+- Phase 08 completed, verified, and published as `v0.8.0-phase8`.
 - Clean working directory on `main`.
 
 ## Work units
-- [x] WU-01 Database Schema v5 migration (`transcripts` table, foreign keys, cascade deletion, queries)
-- [x] WU-02 Transcription domain models (`Transcript`, `TranscriptSegment`, `TranscriptionOptions`, `TranscriptionResult`)
-- [x] WU-03 `TranscriptionProvider` interface, `TranscriptionRegistry`, and providers
-- [x] WU-04 `AudioExtractor` subsystem (duration/size checks, audio partition management)
-- [x] WU-05 `ProcessingJobManager` transcription pipeline integration & artifact archiving
-- [x] WU-06 UI transcript rendering with search-on-detail & timestamp chips in `ContentDetailBottomSheet`
-- [x] WU-07 Unit test suites (`TranscriptionProviderTest`, `TranscriptModelTest`, `AudioExtractorTest`)
-- [x] WU-08 Version bump to `0.8.0-phase8` (versionCode 8), CI/CD verification, and release packaging
+- [ ] WU-01 Database Schema v6 migration (`ocr_records` table, foreign keys, cascade deletion, queries)
+- [ ] WU-02 OCR domain models (`OcrFrame`, `OcrRecord`, `OcrOptions`, `OcrResult`)
+- [ ] WU-03 `OcrProvider` interface, `OcrRegistry`, and providers (`OnDeviceOcrProvider`, `CloudVisionOcrProvider`)
+- [ ] WU-04 `FrameExtractor` sampling policy & `TextDeduplicator` algorithm
+- [ ] WU-05 `ProcessingJobManager` OCR pipeline integration & artifact archiving
+- [ ] WU-06 UI OCR rendering with search-on-detail & frame timestamp chips in `ContentDetailBottomSheet`
+- [ ] WU-07 Unit test suites (`OcrModelTest`, `OcrProviderTest`, `FrameExtractorTest`)
+- [ ] WU-08 Version bump to `0.9.0-phase9` (versionCode 9), CI/CD verification, and release packaging
 
 ## Phase acceptance criteria
-1. Database Schema v5 seamlessly migrates existing v4 databases with clean foreign keys and indexes.
-2. Transcription provider abstraction allows runtime provider registration without hardcoding vendors.
-3. True timestamps are preserved only when returned by providers; never fabricated.
-4. Extracted transcripts are stored in SQLite and registered in object storage as traceable artifacts.
-5. Content detail sheet provides seamless reading, searching within transcript text, and copying.
-6. All unit tests pass in CI/CD, and an installable debug APK `v0.8.0-phase8` is produced.
+1. Database Schema v6 seamlessly migrates existing v5 databases with clean foreign keys and indexes.
+2. OCR provider abstraction allows runtime provider registration without hardcoded engines.
+3. Frame sampling selectively samples frames (max 15 frames) without exploding compute or storage.
+4. Consecutive on-screen text duplicates (watermarks, titles) are deduplicated while preserving frame references.
+5. Extracted visual text is stored in SQLite, registered in object storage as an immutable artifact, and indexed in search.
+6. Content detail sheet provides seamless reading, searching within visual text, and copying.
+7. All unit tests pass in CI/CD, and an installable debug APK `v0.9.0-phase9` is produced.

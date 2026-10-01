@@ -43,6 +43,9 @@ import com.seiftech.hifadhio.media.MediaStorageManager;
 import com.seiftech.hifadhio.transcription.AudioExtractor;
 import com.seiftech.hifadhio.transcription.Transcript;
 import com.seiftech.hifadhio.transcription.TranscriptSegment;
+import com.seiftech.hifadhio.ocr.FrameExtractor;
+import com.seiftech.hifadhio.ocr.OcrFrame;
+import com.seiftech.hifadhio.ocr.OcrRecord;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -79,6 +82,13 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
     private EditText etTranscriptSearch;
     private ImageButton btnCopyTranscript;
     private MaterialButton btnTranscribeAction;
+
+    // Phase 09: OCR Visual Text Views
+    private LinearLayout layoutOcr, layoutOcrFrames;
+    private TextView tvOcrProvider, tvOcrFrames, tvOcrText;
+    private EditText etOcrSearch;
+    private ImageButton btnCopyOcr;
+    private MaterialButton btnOcrAction;
 
     public static ContentDetailBottomSheet newInstance(ContentItem item) {
         ContentDetailBottomSheet sheet = new ContentDetailBottomSheet();
@@ -186,6 +196,51 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
                     filterTranscript(s != null ? s.toString() : "");
+                }
+                @Override
+                public void afterTextChanged(Editable s) {}
+            });
+        }
+
+        // Phase 09 OCR Views
+        layoutOcr = view.findViewById(R.id.layout_detail_ocr);
+        layoutOcrFrames = view.findViewById(R.id.layout_ocr_frames);
+        tvOcrProvider = view.findViewById(R.id.tv_ocr_badge_provider);
+        tvOcrFrames = view.findViewById(R.id.tv_ocr_badge_frames);
+        tvOcrText = view.findViewById(R.id.tv_detail_ocr_text);
+        etOcrSearch = view.findViewById(R.id.et_ocr_search);
+        btnCopyOcr = view.findViewById(R.id.btn_copy_ocr);
+        btnOcrAction = view.findViewById(R.id.btn_ocr_action);
+
+        if (btnCopyOcr != null) {
+            btnCopyOcr.setOnClickListener(v -> {
+                OcrRecord r = db.getOcrRecordForItem(item.getId());
+                if (r != null && r.getFullText() != null && !r.getFullText().isEmpty()) {
+                    ClipboardManager cm = (ClipboardManager) requireContext().getSystemService(Context.CLIPBOARD_SERVICE);
+                    if (cm != null) {
+                        cm.setPrimaryClip(ClipData.newPlainText("Visual Text", r.getFullText()));
+                        Toast.makeText(requireContext(), "Visual text copied to clipboard", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+        }
+
+        if (btnOcrAction != null) {
+            btnOcrAction.setOnClickListener(v -> {
+                ProcessingJobManager.getInstance(requireContext()).enqueueOcr(item.getId());
+                Toast.makeText(requireContext(), "OCR visual text job scheduled", Toast.LENGTH_SHORT).show();
+                populateViews();
+                if (listener != null) listener.onContentUpdated(item);
+            });
+        }
+
+        if (etOcrSearch != null) {
+            etOcrSearch.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    filterOcr(s != null ? s.toString() : "");
                 }
                 @Override
                 public void afterTextChanged(Editable s) {}
@@ -340,6 +395,7 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
         populateTags();
         populateProcessingTimeline();
         populateTranscript();
+        populateOcr();
     }
 
     private void populateProcessingTimeline() {
@@ -758,6 +814,114 @@ public class ContentDetailBottomSheet extends BottomSheetDialogFragment {
                 } else {
                     tvTranscriptText.setText("No matching speech text for \"" + query + "\"");
                 }
+            }
+        }
+    }
+
+    private void populateOcr() {
+        if (layoutOcr == null) return;
+        OcrRecord record = db.getOcrRecordForItem(item.getId());
+
+        if (record != null && record.getFullText() != null && !record.getFullText().isEmpty()) {
+            layoutOcr.setVisibility(View.VISIBLE);
+            if (tvOcrProvider != null) {
+                tvOcrProvider.setText(record.getProviderId());
+                tvOcrProvider.setVisibility(View.VISIBLE);
+            }
+            if (tvOcrFrames != null) {
+                tvOcrFrames.setText(record.getFramesCount() + " frames");
+                tvOcrFrames.setVisibility(View.VISIBLE);
+            }
+            if (tvOcrText != null) {
+                tvOcrText.setText(record.getFullText());
+                tvOcrText.setVisibility(View.VISIBLE);
+            }
+            if (btnCopyOcr != null) {
+                btnCopyOcr.setVisibility(View.VISIBLE);
+            }
+            if (btnOcrAction != null) {
+                btnOcrAction.setVisibility(View.GONE);
+            }
+            renderOcrFrames(record.getFrames());
+        } else if (FrameExtractor.isEligibleForOcr(item)) {
+            layoutOcr.setVisibility(View.VISIBLE);
+            if (tvOcrProvider != null) {
+                tvOcrProvider.setText("Eligible");
+                tvOcrProvider.setVisibility(View.VISIBLE);
+            }
+            if (tvOcrFrames != null) {
+                tvOcrFrames.setVisibility(View.GONE);
+            }
+            if (tvOcrText != null) {
+                tvOcrText.setText("Visual text has not been extracted yet.");
+            }
+            if (btnCopyOcr != null) {
+                btnCopyOcr.setVisibility(View.GONE);
+            }
+            if (btnOcrAction != null) {
+                btnOcrAction.setVisibility(View.VISIBLE);
+                btnOcrAction.setText("Extract Visual Text (OCR)");
+            }
+            if (layoutOcrFrames != null) {
+                layoutOcrFrames.removeAllViews();
+            }
+        } else {
+            layoutOcr.setVisibility(View.GONE);
+        }
+    }
+
+    private void renderOcrFrames(List<OcrFrame> frames) {
+        if (layoutOcrFrames == null) return;
+        layoutOcrFrames.removeAllViews();
+        if (frames == null || frames.isEmpty()) return;
+
+        for (OcrFrame frame : frames) {
+            LinearLayout row = new LinearLayout(requireContext());
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setPadding(0, 4, 0, 4);
+
+            TextView tvHeader = new TextView(requireContext());
+            if (frame.hasTimestamp()) {
+                tvHeader.setText("[" + frame.getFormattedTimestamp() + "] ");
+            } else {
+                tvHeader.setText("[Frame " + (frame.getFrameIndex() + 1) + "] ");
+            }
+            tvHeader.setTextColor(ContextCompat.getColor(requireContext(), R.color.mint));
+            tvHeader.setTextSize(11);
+            tvHeader.setTypeface(null, android.graphics.Typeface.BOLD);
+
+            TextView tvFrameText = new TextView(requireContext());
+            tvFrameText.setText(frame.getText());
+            tvFrameText.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary));
+            tvFrameText.setTextSize(12);
+
+            row.addView(tvHeader);
+            row.addView(tvFrameText);
+            layoutOcrFrames.addView(row);
+        }
+    }
+
+    private void filterOcr(String query) {
+        if (layoutOcr == null) return;
+        OcrRecord record = db.getOcrRecordForItem(item.getId());
+        if (record == null) return;
+
+        if (query == null || query.trim().isEmpty()) {
+            if (tvOcrText != null) {
+                tvOcrText.setText(record.getFullText());
+                tvOcrText.setVisibility(View.VISIBLE);
+            }
+            renderOcrFrames(record.getFrames());
+            return;
+        }
+
+        String q = query.trim().toLowerCase();
+        List<OcrFrame> filtered = record.searchFrames(q);
+        renderOcrFrames(filtered);
+        if (tvOcrText != null) {
+            tvOcrText.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);
+            if (filtered.isEmpty()) {
+                tvOcrText.setText("No visual text matching \"" + query + "\"");
             }
         }
     }
