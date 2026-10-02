@@ -166,18 +166,27 @@ public class OpenRouterAiProvider implements AiProvider {
             String rawContent = msgObj.optString("content", "");
             rawContent = stripMarkdownFences(rawContent);
 
-            // Strict Schema Validation (§18)
-            AiResult validationResult = PromptManager.validateSchema(rawContent);
-            if (!validationResult.isSuccess()) {
-                Log.w(TAG, "Schema validation failed on OpenRouter output: " + validationResult.getErrorMessage());
-                return validationResult;
+            JSONObject parsed;
+            try {
+                parsed = new JSONObject(rawContent);
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to parse OpenRouter response as JSON: " + rawContent);
+                return AiResult.failure(AiResult.ERROR_INVALID_SCHEMA, "Failed to parse JSON: " + e.getMessage(), System.currentTimeMillis() - startTime);
             }
 
-            JSONObject parsed = new JSONObject(rawContent);
+            // Strict Schema Validation (§18)
+            if (!PromptManager.validateSchema(parsed)) {
+                Log.w(TAG, "Schema validation failed on OpenRouter output: " + rawContent);
+                return AiResult.failure(AiResult.ERROR_INVALID_SCHEMA, "Strict schema validation failed on model response", System.currentTimeMillis() - startTime);
+            }
+
             parsed.put("prompt_version", PromptManager.CURRENT_PROMPT_VERSION);
             parsed.put("provider_id", PROVIDER_ID);
 
-            AiEnrichment enrichment = AiEnrichment.fromStrictJson(contentItemId, parsed);
+            AiEnrichment enrichment = AiEnrichment.fromStrictSchemaJson(contentItemId, parsed);
+            if (enrichment == null) {
+                return AiResult.failure(AiResult.ERROR_INVALID_SCHEMA, "Failed to parse enrichment domain object", System.currentTimeMillis() - startTime);
+            }
             enrichment.setRawJson(rawContent);
             enrichment.setModel(model);
             enrichment.setCostUsd(0.0);

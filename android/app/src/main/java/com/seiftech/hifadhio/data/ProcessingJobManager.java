@@ -28,6 +28,7 @@ import com.seiftech.hifadhio.ai.AiOptions;
 import com.seiftech.hifadhio.ai.AiProvider;
 import com.seiftech.hifadhio.ai.AiRegistry;
 import com.seiftech.hifadhio.ai.AiResult;
+import com.seiftech.hifadhio.ai.LocalHeuristicAiProvider;
 import com.seiftech.hifadhio.ai.PromptManager;
 import java.io.File;
 import java.util.ArrayList;
