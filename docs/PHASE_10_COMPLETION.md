@@ -8,9 +8,9 @@
 - **Target Specification**: Sections 15.5, 18, 19, 20.2, 35 (ADR-008/ADR-010) & 1203–1221 of Master Spec
 - **Version**: `0.10.0-phase10` (versionCode 10)
 - **GitHub Release**: [`v0.10.0-phase10`](https://github.com/Seifj84/Hifadhio/releases/tag/v0.10.0-phase10)
-- **CI/CD Workflow Run**: [Run #36935750020](https://github.com/Seifj84/Hifadhio/actions/runs/36935750020) (Commit: `cbfdf47`)
-- **Direct APK**: `Hifadhio-v0.10.0-phase10-debug.apk` (6,378,530 bytes / 6.08 MB)
-- **SHA256**: `c65637738f701a08f3df81e90a494f2165f7d6ec294553539e58ff038762b863`
+- **CI/CD Workflow Run**: [Run #36944134956](https://github.com/Seifj84/Hifadhio/actions/runs/36944134956) (Commit: `ac91a23`)
+- **Direct APK**: `Hifadhio-v0.10.0-phase10-debug.apk`
+- **SHA256**: `0a240245092f26d09458f029995c15a6b2f3eaf9be51899afac7f8c65ef96d29`
 
 ---
 
@@ -18,11 +18,16 @@
 
 Phase 10 delivers Hifadhio's comprehensive AI Enrichment Engine, advancing the platform from raw multi-modal media ingestion (metadata, speech transcription, visual OCR) to intelligent, structured semantic synthesis. Built in strict accordance with Master Spec §15.5, §18, §1203–§1221, and ADR-008, the system extracts concise summaries, detailed breakdowns, actionable key takeaways, mentioned entities (tools, technologies, organizations), topic classifications, suggested tags, and collection recommendations without overwriting source artifacts or fabricating information (§59, §790).
 
-The architecture introduces a vendor-neutral AI provider interface (`AiProvider`) and registry (`AiRegistry`), backed primarily by an offline-first, zero-cost on-device heuristic engine (`LocalHeuristicAiProvider`, Priority 100) and supplemented by a cloud LLM client abstraction (`CloudLlmAiProvider`, Priority 50). All AI outputs are governed by strict prompt versioning (`PromptManager`, version `v1.0.0`) and rigid JSON schema enforcement (§18). Enriched data is persisted into SQLite database Schema v7 (`ai_enrichments` table), mirrored as immutable object storage artifacts (`media/artifacts/item_{id}_ai_{hash}.json`), and indexed directly into library-wide search queries (`ContentDb.search()`).
+The architecture introduces a vendor-neutral AI provider interface (`AiProvider`) and registry (`AiRegistry`), featuring:
+1. **`OpenRouterAiProvider` (Priority 120)**: Cloud-based zero-cost LLM engine leveraging open-access models (`qwen/qwen3.8-27b:free` primary with `apodex/apodex-1.1-mini:free` fallback) providing deep multimodal intelligence on short-form social posts, Reels, and TikToks.
+2. **`LocalHeuristicAiProvider` (Priority 100)**: Offline-first, zero-cost on-device heuristic engine providing instant local processing and seamless automatic fallback whenever offline or when cloud API limits are reached.
+3. **`CloudLlmAiProvider` (Priority 50)**: Standard cloud LLM client abstraction with token cost tracking.
 
-In the user interface, `ContentDetailBottomSheet` features a prominent "AI GENERATED" labeled section (§790, §1215) with prompt version badges, dual-tier summaries, key takeaways, entity chips, one-tap interactive tag acceptance, one-tap collection reassignment, clipboard copying, and on-demand prompt reprocessing (§1216).
+All AI outputs are governed by strict prompt versioning (`PromptManager`, version `v1.0.0`) and rigid JSON schema enforcement (§18). Enriched data is persisted into SQLite database Schema v7 (`ai_enrichments` table), mirrored as immutable object storage artifacts (`media/artifacts/item_{id}_ai_{hash}.json`), and indexed directly into library-wide search queries (`ContentDb.search()`).
 
-All 24 unit test suites pass cleanly in CI/CD, and the verified debug APK `Hifadhio-v0.10.0-phase10-debug.apk` is released and published.
+In the user interface, `ContentDetailBottomSheet` features a prominent "AI GENERATED" labeled section (§790, §1215) with prompt version badges, dual-tier summaries, key takeaways, entity chips, one-tap interactive tag acceptance, one-tap collection reassignment, clipboard copying, and on-demand prompt reprocessing (§1216). `ProfileFragment` provides live AI Intelligence Tier diagnostics and an interactive "Test AI Connection" tool.
+
+All 25 unit test suites pass cleanly in CI/CD, and the verified debug APK `Hifadhio-v0.10.0-phase10-debug.apk` is released and published.
 
 ---
 
@@ -30,7 +35,7 @@ All 24 unit test suites pass cleanly in CI/CD, and the verified debug APK `Hifad
 
 ### 2.1 Provider Interface (`AiProvider`)
 Defines the vendor-neutral contract isolating machine learning and language models from application business logic:
-- `getProviderId()`: Unique string identifier (e.g. `local_nlp`, `cloud_llm`).
+- `getProviderId()`: Unique string identifier (e.g. `openrouter`, `local_nlp`, `cloud_llm`).
 - `getDisplayName()`: Human-readable provider label.
 - `getPriority()`: Integer rank for automated selection (higher = preferred).
 - `isAvailable()`: Health, credential, and prerequisite check.
@@ -40,8 +45,9 @@ Defines the vendor-neutral contract isolating machine learning and language mode
 
 ### 2.2 Provider Registry (`AiRegistry`)
 Thread-safe singleton managing prioritized provider dispatch:
-1. **`LocalHeuristicAiProvider` (Priority 100)**: Primary engine executing deterministic on-device local NLP at zero financial cost ($0.00) without network transmission. Extracts summaries, key points, entities, tags, and collections while adhering strictly to schema validation.
-2. **`CloudLlmAiProvider` (Priority 50)**: Cloud LLM client abstraction (compatible with Gemini, OpenAI, Claude, Groq endpoints) with token cost estimation ($0.0005 per 1,000 characters).
+1. **`OpenRouterAiProvider` (Priority 120)**: Primary engine when online and configured. Leverages free cloud models (`qwen/qwen3.8-27b:free`, `apodex/apodex-1.1-mini:free`) with zero financial cost ($0.00). Performs deep synthesis for short-form social posts, Reels, and videos.
+2. **`LocalHeuristicAiProvider` (Priority 100)**: Baseline engine executing deterministic on-device local NLP at zero financial cost ($0.00) without network transmission. Automatically acts as an instant graceful fallback if OpenRouter experiences network or rate-limit issues.
+3. **`CloudLlmAiProvider` (Priority 50)**: Standard cloud LLM client abstraction (compatible with Gemini, OpenAI, Claude, Groq endpoints) with token cost estimation ($0.0005 per 1,000 characters).
 
 ---
 
