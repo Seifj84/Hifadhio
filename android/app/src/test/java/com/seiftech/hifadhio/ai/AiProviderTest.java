@@ -24,20 +24,30 @@ public class AiProviderTest {
     @Test
     public void testRegistryPrioritySorting() {
         List<AiProvider> all = registry.getAllProviders();
-        assertTrue(all.size() >= 2);
+        assertTrue(all.size() >= 3);
 
-        // Highest priority should be LocalHeuristicAiProvider (100)
-        assertEquals(LocalHeuristicAiProvider.PROVIDER_ID, all.get(0).getProviderId());
-        assertEquals(100, all.get(0).getPriority());
+        // Highest priority should be OpenRouterAiProvider (120)
+        assertEquals(OpenRouterAiProvider.PROVIDER_ID, all.get(0).getProviderId());
+        assertEquals(120, all.get(0).getPriority());
 
-        // Secondary priority should be CloudLlmAiProvider (50)
-        assertEquals(CloudLlmAiProvider.PROVIDER_ID, all.get(1).getProviderId());
-        assertEquals(50, all.get(1).getPriority());
+        // Secondary priority should be LocalHeuristicAiProvider (100)
+        assertEquals(LocalHeuristicAiProvider.PROVIDER_ID, all.get(1).getProviderId());
+        assertEquals(100, all.get(1).getPriority());
 
-        // Primary provider should be LocalHeuristicAiProvider
+        // Tertiary priority should be CloudLlmAiProvider (50)
+        assertEquals(CloudLlmAiProvider.PROVIDER_ID, all.get(2).getProviderId());
+        assertEquals(50, all.get(2).getPriority());
+
+        // Primary provider should be OpenRouter when configured and available
         AiProvider primary = registry.getPrimaryProvider();
         assertNotNull(primary);
-        assertEquals(LocalHeuristicAiProvider.PROVIDER_ID, primary.getProviderId());
+        assertEquals(OpenRouterAiProvider.PROVIDER_ID, primary.getProviderId());
+
+        // When OpenRouter is removed or disabled, fallback primary is LocalHeuristicAiProvider
+        registry.unregisterProvider(OpenRouterAiProvider.PROVIDER_ID);
+        AiProvider fallbackPrimary = registry.getPrimaryProvider();
+        assertNotNull(fallbackPrimary);
+        assertEquals(LocalHeuristicAiProvider.PROVIDER_ID, fallbackPrimary.getProviderId());
     }
 
     @Test

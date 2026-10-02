@@ -17,6 +17,7 @@ public class AiRegistry {
 
     private AiRegistry() {
         // Register default built-in providers
+        registerProvider(new OpenRouterAiProvider());
         registerProvider(new LocalHeuristicAiProvider());
         registerProvider(new CloudLlmAiProvider());
     }
@@ -67,6 +68,7 @@ public class AiRegistry {
 
     public void reset() {
         providers.clear();
+        registerProvider(new OpenRouterAiProvider());
         registerProvider(new LocalHeuristicAiProvider());
         registerProvider(new CloudLlmAiProvider());
     }

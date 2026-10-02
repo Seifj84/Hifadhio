@@ -537,6 +537,17 @@ public class ProcessingJobManager {
         AiOptions options = AiOptions.defaults();
         AiResult result = provider.enrich(item.getId(), contextText, options);
 
+        // Graceful automatic fallback to Local Heuristic if primary cloud provider encounters an error
+        if ((result == null || !result.isSuccess()) && !provider.getProviderId().equals(LocalHeuristicAiProvider.PROVIDER_ID)) {
+            Log.w(TAG, "[Job #" + job.getId() + "] Primary AI provider " + provider.getProviderId() + " failed ("
+                    + (result != null ? result.getErrorMessage() : "no result") + "), falling back to Local Heuristic NLP");
+            AiProvider fallback = AiRegistry.getInstance().getProvider(LocalHeuristicAiProvider.PROVIDER_ID);
+            if (fallback != null && fallback.isAvailable()) {
+                provider = fallback;
+                result = provider.enrich(item.getId(), contextText, options);
+            }
+        }
+
         if (result != null && result.isSuccess() && result.getEnrichment() != null) {
             AiEnrichment enrichment = result.getEnrichment();
             db.updateJobProgress(job.getId(), 85, "Persisting structured enrichment and artifacts");

@@ -37,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         db = new ContentDb(this);
+        com.seiftech.hifadhio.ai.AiConfig.getInstance(this);
         bottomNav = findViewById(R.id.bottom_nav);
         fabAdd = findViewById(R.id.fab_add);
 
